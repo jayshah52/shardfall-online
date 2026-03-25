@@ -1,0 +1,18 @@
+# Default ignored files
+.DS_Store
+__pycache__/
+*.pyc
+
+# Frontend
+**/node_modules/
+**/dist/
+
+# Backend env
+.venv/
+env/
+venv/
+.env
+
+# Tooling
+.vscode/
+.idea/
