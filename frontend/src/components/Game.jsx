@@ -3,6 +3,7 @@ import { doAction, getRoomState } from '../api'
 import Tutorial from './Tutorial'
 import TradeModal from './TradeModal'
 import ScoreModal from './ScoreModal'
+import PlayerTradeModal from './PlayerTradeModal'
 
 const SHARD_ICONS = { ember: '🔴', tide: '🔵', verdant: '🟢', storm: '🟡', void: '🟣' }
 const SHARD_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
@@ -16,6 +17,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const [discardSelection, setDiscardSelection] = useState({})
   const [showTrade, setShowTrade] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
+  const [showP2pTrade, setShowP2pTrade] = useState(false)
   const [convertFrom, setConvertFrom] = useState(null)
   const [convertTo, setConvertTo] = useState(null)
   const [showTutorial, setShowTutorial] = useState(true)
@@ -37,10 +39,11 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const handLimit = myPlayer?.seeker?.power === 'hand_limit_up' ? 12 : (state.hand_limit || 10)
   const myTotalShards = myPlayer ? Object.values(myPlayer.shards).reduce((a, b) => a + b, 0) : 0
 
-  // Poll for game state when it's NOT my turn
+  // Poll for game state when it's NOT my turn or trade is active
   useEffect(() => {
-    if (isMyTurn && !isGameOver) return // Don't poll when it's my turn
     if (isGameOver) return
+    const shouldPoll = (!isMyTurn && !isMyDiscard) || state.active_trade
+    if (!shouldPoll) return
 
     const interval = setInterval(async () => {
       try {
@@ -56,12 +59,17 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
             setAnimatingRifts(changedRifts)
             setTimeout(() => setAnimatingRifts(new Set()), 600)
           }
+
+          if (newState.active_trade && (!prev.active_trade || prev.active_trade.initiator !== newState.active_trade.initiator)) {
+            if (newState.active_trade.initiator !== myIndex) setShowP2pTrade(true)
+          }
+
           return newState
         })
       } catch (e) { /* ignore polling errors */ }
     }, 2000)
     return () => clearInterval(interval)
-  }, [isMyTurn, isGameOver, roomCode, playerId])
+  }, [isMyTurn, isGameOver, roomCode, playerId, isMyDiscard, state.active_trade])
 
   // Reset selections when turn changes
   useEffect(() => {
@@ -550,10 +558,35 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               <span className="action-icon">🔧</span> Convert <span className="free-badge">FREE</span>
             </button>
           )}
+
+          {isMyTurn && !state.active_trade && (
+            <button className={`action-btn free-action ${showP2pTrade ? 'active' : ''}`}
+              onClick={() => setShowP2pTrade(!showP2pTrade)}>
+              <span className="action-icon">🤝</span> P2P Trade <span className="free-badge">FREE</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Persistent Banner for Active Trades */}
+      {state.active_trade && !showP2pTrade && (
+        <div className="active-trade-banner animate-slide-up" style={{
+          position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)', zIndex: 90,
+          background: 'var(--warning)', color: '#000', padding: '12px 24px', borderRadius: '30px',
+          boxShadow: '0 8px 30px rgba(243, 156, 18, 0.4)', fontWeight: 'bold', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }} onClick={() => setShowP2pTrade(true)}>
+          📢 {state.active_trade.initiator === myIndex ? 'Manage your active Trade Offer' : `Respond to Trade Offer from ${state.active_trade.initiator_name}`} ➔
         </div>
       )}
 
       {/* === MODALS === */}
+      {showP2pTrade && (
+        <PlayerTradeModal state={state} myPlayer={myPlayer}
+          onAct={(action, params) => { act(action, params); if (action === 'trade_player_offer' || action === 'trade_player_cancel' || action === 'trade_player_confirm') setShowP2pTrade(false) }}
+          onClose={() => setShowP2pTrade(false)} />
+      )}
+
       {showTrade && (
         <TradeModal player={myPlayer}
           tradeRate={myPlayer?.seeker?.power === 'trade_discount' || myPlayer?.constructs?.some(c => c.ability === 'trade_discount') ? 2 : 3}
