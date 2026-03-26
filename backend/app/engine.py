@@ -27,6 +27,7 @@ class ShardFallEngine:
         self.first_player_offset = 0  # rotates each round
         self.first_large_builder = None  # track for Speed Builder contract
         self.discard_required = 0  # shards to discard
+        self.active_trade = None  # dict tracking p2p trade state
 
         # Players
         self.players = []
@@ -79,9 +80,13 @@ class ShardFallEngine:
         top_section = smalls + early_mediums
         random.shuffle(top_section)
 
+        # Bottom section: mix of all remaining mediums and ALL larges!
+        bottom_section = late_mediums + larges
+        random.shuffle(bottom_section)
+
         # Deck: pop() draws from end, so top_section must be at end
         # Bottom (drawn last) → Top (drawn first)
-        self.construct_deck = larges + late_mediums + top_section
+        self.construct_deck = bottom_section + top_section
         self.construct_display = []
         self.fracture = 0
         self.fracture_threshold = FRACTURE_THRESHOLDS[self.player_count]
@@ -155,18 +160,7 @@ class ShardFallEngine:
                 self._log("anomaly", f"⚡ ANOMALY: {card['name']} — {card['description']}", card)
                 self._resolve_anomaly(card)
             return self._reveal_rift(silent)
-        # Dynamic Rift Cap: Max rifts = Player Count + 1
-        max_rifts = self.player_count + 1
-        if not silent and len(self.active_rifts) >= max_rifts:
-            # Instead of spawning, destabilize the most stable rift
-            target = max(self.active_rifts, key=lambda r: r["stability"])
-            target["stability"] -= 1
-            self._log("danger", f"⚖️ DIMENSIONAL OVERLOAD! Max capacity reached. {target['type'].title()} Rift destabilized −1.")
-            if target["stability"] <= 0:
-                self._log("danger", f"⚠️ The overload caused the {target['type'].title()} Rift to reach 0! It will collapse!")
-            # Put the drawn card on the bottom of the deck so it's not lost
-            self.rift_deck.append(card)
-            return None
+        # No Rift Cap: allow rifts to spawn naturally so players aren't forced to destroy their own rifts
 
         rift = {
             "id": card["id"], "type": card["type"],
@@ -381,18 +375,33 @@ class ShardFallEngine:
         self.extracts_this_turn = 0
         self._log("info", f"🎮 Game started! Round 1 — {p['name']}'s turn")
 
-    def do_action(self, action: str, params: dict = None):
+    def do_action(self, player_idx: int, action: str, params: dict = None):
+        params = params or {}
+        player = self.players[player_idx]
+
+        # Handle out-of-turn trade responses explicitly
+        if action == "respond_trade":
+            result = self._action_trade_respond(player, params)
+            if result and result.get("error"): return result
+            return self.get_state()
+
+        # All other actions require it to be your turn
+        if player_idx != self.current_player:
+            return {"error": "Not your turn"}
+
         if self.phase == "discard":
             if action != "discard":
                 return {"error": "Must discard shards first (hand limit exceeded)"}
-            return self._action_discard(self.players[self.current_player], params or {})
+            return self._action_discard(player, params)
+        
         if self.phase != "playing":
             return {"error": f"Cannot act in phase: {self.phase}"}
-        if self.actions_remaining <= 0:
+
+        is_free_action = action in ["convert", "trade_player_offer", "trade_player_cancel", "trade_player_confirm"]
+
+        if not is_free_action and self.actions_remaining <= 0:
             return {"error": "No actions remaining"}
 
-        params = params or {}
-        player = self.players[self.current_player]
         result = None
 
         if action == "gather":
@@ -407,6 +416,12 @@ class ShardFallEngine:
             result = self._action_trade_bank(player, params)
         elif action == "convert":
             result = self._action_convert(player, params)
+        elif action == "trade_player_offer":
+            result = self._action_trade_offer(player, params)
+        elif action == "trade_player_cancel":
+            result = self._action_trade_cancel(player, params)
+        elif action == "trade_player_confirm":
+            result = self._action_trade_confirm(player, params)
         else:
             return {"error": f"Unknown action: {action}"}
 
@@ -415,8 +430,7 @@ class ShardFallEngine:
 
         self._check_milestones()
 
-        # Convert is free action
-        if action != "convert":
+        if not is_free_action:
             self.actions_remaining -= 1
 
         # Check hand limit
@@ -734,6 +748,85 @@ class ShardFallEngine:
             f"🔧 {player['name']} converted {SHARD_ICONS[from_type]} → {SHARD_ICONS[to_type]} (Shard Forge)")
         return {"ok": True}
 
+    def _action_trade_offer(self, player, params):
+        if self.active_trade: return {"error": "A trade is already active"}
+        give = {k: v for k, v in params.get("give", {}).items() if v > 0}
+        request = {k: v for k, v in params.get("request", {}).items() if v > 0}
+        if not give and not request: return {"error": "Empty trade offer"}
+        for t, count in give.items():
+            if player["shards"].get(t, 0) < count: return {"error": f"You lack {count} {t}"}
+        self.active_trade = {
+            "initiator": player["index"], "initiator_name": player["name"],
+            "give": give, "request": request, "responses": {}
+        }
+        self._log("info", f"🤝 {player['name']} opened a trade offer to the table.")
+        return {"ok": True}
+
+    def _action_trade_respond(self, player, params):
+        if not self.active_trade: return {"error": "No active trade"}
+        if player["index"] == self.active_trade["initiator"]: return {"error": "You initiated this"}
+        status = params.get("status")
+        if status not in ["accept", "reject", "counter"]: return {"error": "Invalid response"}
+        
+        if status == "accept":
+            for t, count in self.active_trade["request"].items():
+                if player["shards"].get(t, 0) < count: return {"error": f"Not enough {t}"}
+            self.active_trade["responses"][str(player["index"])] = {"status": "accept"}
+            self._log("info", f"✅ {player['name']} accepted the trade request!")
+        elif status == "reject":
+            self.active_trade["responses"][str(player["index"])] = {"status": "reject"}
+        elif status == "counter":
+            give = {k: v for k, v in params.get("give", {}).items() if v > 0}
+            request = {k: v for k, v in params.get("request", {}).items() if v > 0}
+            if not give and not request: return {"error": "Empty counter"}
+            for t, count in give.items():
+                if player["shards"].get(t, 0) < count: return {"error": f"Not enough {t}"}
+            self.active_trade["responses"][str(player["index"])] = {
+                "status": "counter", "give": give, "request": request
+            }
+            self._log("info", f"🔄 {player['name']} made a counter-offer.")
+        return {"ok": True}
+
+    def _action_trade_cancel(self, player, params):
+        if not self.active_trade or self.active_trade["initiator"] != player["index"]:
+            return {"error": "Not your trade"}
+        self.active_trade = None
+        self._log("info", f"❌ {player['name']} cancelled their trade offer.")
+        return {"ok": True}
+
+    def _action_trade_confirm(self, player, params):
+        if not self.active_trade or self.active_trade["initiator"] != player["index"]:
+            return {"error": "Not your trade"}
+        partner_idx = params.get("partner_idx")
+        resp = self.active_trade["responses"].get(str(partner_idx))
+        if not resp or resp["status"] not in ["accept", "counter"]:
+            return {"error": "Invalid partner response"}
+            
+        partner = self.players[int(partner_idx)]
+        give_p1 = self.active_trade["give"]
+        give_p2 = self.active_trade["request"]
+        if resp["status"] == "counter":
+            give_p2 = resp["give"]
+            give_p1 = resp["request"]
+            
+        for t, count in give_p1.items():
+            if player["shards"].get(t, 0) < count: return {"error": "You no longer have the shards"}
+        for t, count in give_p2.items():
+            if partner["shards"].get(t, 0) < count: return {"error": f"{partner['name']} lacks shards"}
+            
+        for t, count in give_p1.items():
+            player["shards"][t] -= count
+            partner["shards"][t] += count
+        for t, count in give_p2.items():
+            partner["shards"][t] -= count
+            player["shards"][t] += count
+            
+        player["trades_completed"] += 1
+        partner["trades_completed"] += 1
+        self.active_trade = None
+        self._log("action", f"🤝 {player['name']} and {partner['name']} traded shards!")
+        return {"ok": True}
+
     def _advance_turn(self):
         # Find next player in rotated order
         play_order = [(self.first_player_offset + i) % self.player_count
@@ -753,6 +846,11 @@ class ShardFallEngine:
             self.actions_remaining = self._get_actions_per_turn(p)
             self.extracts_this_turn = 0
             self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
+            
+            # If player gained shards out of turn (via Tolls or Anomalies), enforce limit before they act
+            if self._check_hand_limit(p):
+                self.phase = "discard"
+                self._log("info", f"⚠️ {p['name']} exceeded hand limit out-of-turn! Must discard {self.discard_required} shard(s).")
 
     def _stability_check(self):
         collapsed = [r for r in self.active_rifts if r["stability"] <= 0]
@@ -800,7 +898,12 @@ class ShardFallEngine:
         p = self.players[first]
         self.actions_remaining = self._get_actions_per_turn(p)
         self.extracts_this_turn = 0
-        self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
+        
+        if self._check_hand_limit(p):
+            self.phase = "discard"
+            self._log("info", f"⚠️ {p['name']} exceeded hand limit out-of-turn! Must discard {self.discard_required} shard(s).")
+        else:
+            self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
 
     def _check_game_end(self):
         if self.phase == "game_over":
@@ -1093,6 +1196,7 @@ class ShardFallEngine:
             "actions_remaining": self.actions_remaining,
             "discard_required": self.discard_required,
             "hand_limit": HAND_LIMIT,
+            "active_trade": self.active_trade,
             "constructs_end_count": CONSTRUCTS_END_COUNT,
             "players": [
                 {

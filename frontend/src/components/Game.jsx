@@ -3,6 +3,7 @@ import { doAction, getRoomState } from '../api'
 import Tutorial from './Tutorial'
 import TradeModal from './TradeModal'
 import ScoreModal from './ScoreModal'
+import PlayerTradeModal from './PlayerTradeModal'
 
 const SHARD_ICONS = { ember: '🔴', tide: '🔵', verdant: '🟢', storm: '🟡', void: '🟣' }
 const SHARD_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
@@ -16,6 +17,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const [discardSelection, setDiscardSelection] = useState({})
   const [showTrade, setShowTrade] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
+  const [showP2pTrade, setShowP2pTrade] = useState(false)
   const [convertFrom, setConvertFrom] = useState(null)
   const [convertTo, setConvertTo] = useState(null)
   const [showTutorial, setShowTutorial] = useState(true)
@@ -37,10 +39,11 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const handLimit = myPlayer?.seeker?.power === 'hand_limit_up' ? 12 : (state.hand_limit || 10)
   const myTotalShards = myPlayer ? Object.values(myPlayer.shards).reduce((a, b) => a + b, 0) : 0
 
-  // Poll for game state when it's NOT my turn
+  // Poll for game state when it's NOT my turn or trade is active
   useEffect(() => {
-    if (isMyTurn && !isGameOver) return // Don't poll when it's my turn
     if (isGameOver) return
+    const shouldPoll = (!isMyTurn && !isMyDiscard) || state.active_trade
+    if (!shouldPoll) return
 
     const interval = setInterval(async () => {
       try {
@@ -56,12 +59,17 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
             setAnimatingRifts(changedRifts)
             setTimeout(() => setAnimatingRifts(new Set()), 600)
           }
+
+          if (newState.active_trade && (!prev.active_trade || prev.active_trade.initiator !== newState.active_trade.initiator)) {
+            if (newState.active_trade.initiator !== myIndex) setShowP2pTrade(true)
+          }
+
           return newState
         })
       } catch (e) { /* ignore polling errors */ }
     }, 2000)
     return () => clearInterval(interval)
-  }, [isMyTurn, isGameOver, roomCode, playerId])
+  }, [isMyTurn, isGameOver, roomCode, playerId, isMyDiscard, state.active_trade])
 
   // Reset selections when turn changes
   useEffect(() => {
@@ -212,6 +220,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           )}
         </div>
         <div className="game-header-right">
+          <button className="btn btn-small btn-outline" onClick={() => { if(window.confirm('Are you sure you want to leave the game?')) onLeave() }} title="Leave Room" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginRight: '8px' }}>🚪 Leave</button>
           <span className="room-code-badge" title="Room Code">🏠 {roomCode}</span>
           <div className="fracture-track" id="fracture-track">
             <span className="fracture-track-label">Fracture</span>
@@ -391,24 +400,51 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               </button>
             ))}
           </div>
-          {viewedPlayer && (
+          {viewedPlayer && (() => {
+            let guardianMult = 1;
+            let explorerMult = 1;
+            let constructsVp = 0;
+            viewedPlayer.constructs?.forEach(c => {
+              constructsVp += c.vp;
+              if (c.ability === 'double_guardian_vp') guardianMult = 2;
+              if (c.ability === 'double_explorer_vp') explorerMult = 2;
+            });
+            const visVp = constructsVp + (viewedPlayer.guardian_tokens || 0) * guardianMult + (viewedPlayer.explorer_tokens || 0) * explorerMult;
+
+            return (
             <div className="player-info">
-              <div className="player-name-row">
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block' }} />
-                {viewedPlayer.name}
-                {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 6 }}>YOU</span>}
-                {viewedPlayer.seeker && <span className="seeker-badge">{viewedPlayer.seeker.icon} {viewedPlayer.seeker.name}</span>}
+              <div className="player-name-row" style={{ fontSize: '1.2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block', boxShadow: `0 0 10px ${viewedPlayer.color}` }} />
+                  {viewedPlayer.name}
+                  {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 8 }}>YOU</span>}
+                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', background: 'rgba(255,167,38,0.2)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(255,167,38,0.4)' }}>
+                  {visVp} VP
+                </div>
               </div>
+              
+              {viewedPlayer.seeker && (
+                <div className="active-power-card" style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '16px', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>{viewedPlayer.seeker.icon}</span>
+                    <span style={{ fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.85rem', color: 'var(--accent)' }}>{viewedPlayer.seeker.name}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.3' }}>
+                    "{viewedPlayer.seeker.description || viewedPlayer.seeker.ability}"
+                  </div>
+                </div>
+              )}
               <div className="shards-display">
                 {SHARD_TYPES.map(type => (
-                  <div key={type} className="shard-count" data-type={type}>
+                   <div key={type} className="shard-count" data-type={type}>
                     {SHARD_ICONS[type]} {viewedPlayer.shards[type]}
                   </div>
                 ))}
               </div>
               <div className="token-row">
-                <div className="token-item">🛡️ <span className="token-value">{viewedPlayer.guardian_tokens}</span> Guardian</div>
-                <div className="token-item">🧭 <span className="token-value">{viewedPlayer.explorer_tokens}</span> Explorer ({viewedPlayer.explored_types?.length || 0}/5)</div>
+                <div className="token-item">🛡️ <span className="token-value">{viewedPlayer.guardian_tokens}</span> {guardianMult > 1 && <span style={{color:'var(--warning)', fontSize:'0.7rem'}}>(x{guardianMult})</span>} Guardian</div>
+                <div className="token-item">🧭 <span className="token-value">{viewedPlayer.explorer_tokens}</span> {explorerMult > 1 && <span style={{color:'var(--warning)', fontSize:'0.7rem'}}>(x{explorerMult})</span>} Explorer</div>
               </div>
               <div className="token-row">
                 <div className="token-item">🔖 <span className="token-value">{viewedPlayer.tolls_collected}</span> Tolls</div>
@@ -420,11 +456,18 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                     Built: {viewedPlayer.constructs.filter(c => c.tier === 'small').length}S / {viewedPlayer.constructs.filter(c => c.tier === 'medium').length}M / {viewedPlayer.constructs.filter(c => c.tier === 'large').length}L
                     — {viewedPlayer.constructs.length}/{state.constructs_end_count || 7}
                   </div>
-                  <div className="built-constructs">
+                  <div className="built-constructs" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {viewedPlayer.constructs.map((c, i) => (
-                      <div key={i} className="built-item">
-                        <span>{c.name} <span className={`mini-tier ${c.tier}`}>{c.tier[0].toUpperCase()}</span></span>
-                        <span className="built-vp">+{c.vp}</span>
+                      <div key={i} className="built-item" style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.name} <span className={`mini-tier ${c.tier}`}>{c.tier[0].toUpperCase()}</span></span>
+                          <span className="built-vp" style={{ color: 'var(--warning)', fontWeight: 'bold' }}>+{c.vp} VP</span>
+                        </div>
+                        {c.ability_desc && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--accent)', marginTop: '4px', fontStyle: 'italic' }}>
+                            {c.ability_desc}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -463,7 +506,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                 </div>
               )}
             </div>
-          )}
+          )})()}
         </div>
 
         {/* Activity Log */}
@@ -515,10 +558,35 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               <span className="action-icon">🔧</span> Convert <span className="free-badge">FREE</span>
             </button>
           )}
+
+          {isMyTurn && !state.active_trade && (
+            <button className={`action-btn free-action ${showP2pTrade ? 'active' : ''}`}
+              onClick={() => setShowP2pTrade(!showP2pTrade)}>
+              <span className="action-icon">🤝</span> P2P Trade <span className="free-badge">FREE</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Persistent Banner for Active Trades */}
+      {state.active_trade && !showP2pTrade && (
+        <div className="active-trade-banner animate-slide-up" style={{
+          position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)', zIndex: 90,
+          background: 'var(--warning)', color: '#000', padding: '12px 24px', borderRadius: '30px',
+          boxShadow: '0 8px 30px rgba(243, 156, 18, 0.4)', fontWeight: 'bold', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }} onClick={() => setShowP2pTrade(true)}>
+          📢 {state.active_trade.initiator === myIndex ? 'Manage your active Trade Offer' : `Respond to Trade Offer from ${state.active_trade.initiator_name}`} ➔
         </div>
       )}
 
       {/* === MODALS === */}
+      {showP2pTrade && (
+        <PlayerTradeModal state={state} myPlayer={myPlayer}
+          onAct={(action, params) => { act(action, params); if (action === 'trade_player_offer' || action === 'trade_player_cancel' || action === 'trade_player_confirm') setShowP2pTrade(false) }}
+          onClose={() => setShowP2pTrade(false)} />
+      )}
+
       {showTrade && (
         <TradeModal player={myPlayer}
           tradeRate={myPlayer?.seeker?.power === 'trade_discount' || myPlayer?.constructs?.some(c => c.ability === 'trade_discount') ? 2 : 3}

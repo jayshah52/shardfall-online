@@ -131,14 +131,12 @@ def api_do_action(code: str, req: ActionRequest):
     player = room.get_player_by_id(req.player_id)
     if not player:
         raise HTTPException(403, "Invalid player")
-    # Only the current player can act
-    if room.engine.current_player != player["index"]:
-        phase = room.engine.phase
-        if phase == "discard" and room.engine.current_player != player["index"]:
-            raise HTTPException(400, "Not your turn — waiting for discard")
-        elif phase == "playing":
-            raise HTTPException(400, "Not your turn")
-    result = room.engine.do_action(req.action, req.params)
+    player_idx = player["index"]
+    # Allow responding to trades out of turn
+    if room.engine.current_player != player_idx and req.action != "respond_trade":
+        raise HTTPException(400, "Not your turn")
+        
+    result = room.engine.do_action(player_idx, req.action, req.params)
     if isinstance(result, dict) and result.get("error"):
         raise HTTPException(400, result["error"])
     return room.get_state(req.player_id)
