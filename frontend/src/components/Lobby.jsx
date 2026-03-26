@@ -3,7 +3,7 @@ import { getRoomState, startGame } from '../api'
 
 const PLAYER_COLORS = ['#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6']
 
-export default function Lobby({ roomCode, playerId, initialState, onGameStart }) {
+export default function Lobby({ roomCode, playerId, initialState, onGameStart, onLeave }) {
   const [state, setState] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
