@@ -79,9 +79,13 @@ class ShardFallEngine:
         top_section = smalls + early_mediums
         random.shuffle(top_section)
 
+        # Bottom section: mix of all remaining mediums and ALL larges!
+        bottom_section = late_mediums + larges
+        random.shuffle(bottom_section)
+
         # Deck: pop() draws from end, so top_section must be at end
         # Bottom (drawn last) → Top (drawn first)
-        self.construct_deck = larges + late_mediums + top_section
+        self.construct_deck = bottom_section + top_section
         self.construct_display = []
         self.fracture = 0
         self.fracture_threshold = FRACTURE_THRESHOLDS[self.player_count]
@@ -155,18 +159,7 @@ class ShardFallEngine:
                 self._log("anomaly", f"⚡ ANOMALY: {card['name']} — {card['description']}", card)
                 self._resolve_anomaly(card)
             return self._reveal_rift(silent)
-        # Dynamic Rift Cap: Max rifts = Player Count + 1
-        max_rifts = self.player_count + 1
-        if not silent and len(self.active_rifts) >= max_rifts:
-            # Instead of spawning, destabilize the most stable rift
-            target = max(self.active_rifts, key=lambda r: r["stability"])
-            target["stability"] -= 1
-            self._log("danger", f"⚖️ DIMENSIONAL OVERLOAD! Max capacity reached. {target['type'].title()} Rift destabilized −1.")
-            if target["stability"] <= 0:
-                self._log("danger", f"⚠️ The overload caused the {target['type'].title()} Rift to reach 0! It will collapse!")
-            # Put the drawn card on the bottom of the deck so it's not lost
-            self.rift_deck.append(card)
-            return None
+        # No Rift Cap: allow rifts to spawn naturally so players aren't forced to destroy their own rifts
 
         rift = {
             "id": card["id"], "type": card["type"],
