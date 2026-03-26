@@ -746,6 +746,11 @@ class ShardFallEngine:
             self.actions_remaining = self._get_actions_per_turn(p)
             self.extracts_this_turn = 0
             self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
+            
+            # If player gained shards out of turn (via Tolls or Anomalies), enforce limit before they act
+            if self._check_hand_limit(p):
+                self.phase = "discard"
+                self._log("info", f"⚠️ {p['name']} exceeded hand limit out-of-turn! Must discard {self.discard_required} shard(s).")
 
     def _stability_check(self):
         collapsed = [r for r in self.active_rifts if r["stability"] <= 0]
@@ -793,7 +798,12 @@ class ShardFallEngine:
         p = self.players[first]
         self.actions_remaining = self._get_actions_per_turn(p)
         self.extracts_this_turn = 0
-        self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
+        
+        if self._check_hand_limit(p):
+            self.phase = "discard"
+            self._log("info", f"⚠️ {p['name']} exceeded hand limit out-of-turn! Must discard {self.discard_required} shard(s).")
+        else:
+            self._log("info", f"➡️ {p['name']}'s turn ({self.actions_remaining} actions)")
 
     def _check_game_end(self):
         if self.phase == "game_over":

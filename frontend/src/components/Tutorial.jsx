@@ -29,9 +29,9 @@ export default function Tutorial({ onClose }) {
 
   const pos = () => {
     if (!rect || cur.position === 'center') return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-    if (cur.position === 'below') return { top: rect.top + rect.height + 16, left: Math.min(rect.left, window.innerWidth - 400) }
-    if (cur.position === 'above') return { bottom: window.innerHeight - rect.top + 16, left: Math.min(rect.left, window.innerWidth - 400) }
-    if (cur.position === 'left') return { top: rect.top, right: window.innerWidth - rect.left + 16 }
+    if (cur.position === 'below') return { top: rect.top + rect.height + 16, left: Math.max(16, Math.min(rect.left, window.innerWidth - 380)) }
+    if (cur.position === 'above') return { bottom: window.innerHeight - rect.top + 16, left: Math.max(16, Math.min(rect.left, window.innerWidth - 380)) }
+    if (cur.position === 'left') return { top: rect.top, right: Math.max(16, window.innerWidth - rect.left + 16) }
     return {}
   }
 
@@ -39,7 +39,7 @@ export default function Tutorial({ onClose }) {
     <>
       <div className="tutorial-overlay" onClick={onClose} />
       {rect && <div className="tutorial-spotlight" style={rect} />}
-      <div className="tutorial-tooltip" style={pos()}>
+      <div className="tutorial-tooltip" style={{...pos(), maxWidth: 'calc(100vw - 32px)'}}>
         <h3>{cur.title}</h3>
         <p style={{ whiteSpace: 'pre-line' }}>{cur.body}</p>
         <div className="tutorial-nav">

@@ -121,12 +121,16 @@ export default function Lobby({ roomCode, playerId, initialState, onGameStart })
         )}
 
         {!isHost && (
-          <div className="lobby-waiting-message">
+          <div className="lobby-waiting-message" style={{ textAlign: 'center', marginTop: '12px', color: 'var(--text-secondary)' }}>
             {isFull
               ? '✅ All players joined — waiting for host to start...'
               : `⏳ Waiting for ${needed - joinedCount} more player(s)...`}
           </div>
         )}
+
+        <button className="btn btn-outline btn-full" onClick={onLeave} style={{ marginTop: '12px', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+          🚪 Leave Room
+        </button>
       </div>
     </div>
   )

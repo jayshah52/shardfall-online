@@ -110,6 +110,7 @@ export default function App() {
         playerId={playerId}
         initialState={gameState}
         onGameStart={handleGameStart}
+        onLeave={handleLeave}
       />
     )
   }

@@ -212,6 +212,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           )}
         </div>
         <div className="game-header-right">
+          <button className="btn btn-small btn-outline" onClick={() => { if(window.confirm('Are you sure you want to leave the game?')) onLeave() }} title="Leave Room" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginRight: '8px' }}>🚪 Leave</button>
           <span className="room-code-badge" title="Room Code">🏠 {roomCode}</span>
           <div className="fracture-track" id="fracture-track">
             <span className="fracture-track-label">Fracture</span>
@@ -391,12 +392,28 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               </button>
             ))}
           </div>
-          {viewedPlayer && (
+          {viewedPlayer && (() => {
+            let guardianMult = 1;
+            let explorerMult = 1;
+            let constructsVp = 0;
+            viewedPlayer.constructs?.forEach(c => {
+              constructsVp += c.vp;
+              if (c.ability === 'double_guardian_vp') guardianMult = 2;
+              if (c.ability === 'double_explorer_vp') explorerMult = 2;
+            });
+            const visVp = constructsVp + (viewedPlayer.guardian_tokens || 0) * guardianMult + (viewedPlayer.explorer_tokens || 0) * explorerMult;
+
+            return (
             <div className="player-info">
-              <div className="player-name-row" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
-                <span style={{ width: 12, height: 12, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block', boxShadow: `0 0 10px ${viewedPlayer.color}` }} />
-                {viewedPlayer.name}
-                {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 8 }}>YOU</span>}
+              <div className="player-name-row" style={{ fontSize: '1.2rem', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ width: 12, height: 12, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block', boxShadow: `0 0 10px ${viewedPlayer.color}` }} />
+                  {viewedPlayer.name}
+                  {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 8 }}>YOU</span>}
+                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', background: 'rgba(255,167,38,0.2)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(255,167,38,0.4)' }}>
+                  {visVp} VP
+                </div>
               </div>
               
               {viewedPlayer.seeker && (
@@ -406,20 +423,20 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                     <span style={{ fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.85rem', color: 'var(--accent)' }}>{viewedPlayer.seeker.name}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.3' }}>
-                    "{viewedPlayer.seeker.ability}"
+                    "{viewedPlayer.seeker.description || viewedPlayer.seeker.ability}"
                   </div>
                 </div>
               )}
               <div className="shards-display">
                 {SHARD_TYPES.map(type => (
-                  <div key={type} className="shard-count" data-type={type}>
+                   <div key={type} className="shard-count" data-type={type}>
                     {SHARD_ICONS[type]} {viewedPlayer.shards[type]}
                   </div>
                 ))}
               </div>
               <div className="token-row">
-                <div className="token-item">🛡️ <span className="token-value">{viewedPlayer.guardian_tokens}</span> Guardian</div>
-                <div className="token-item">🧭 <span className="token-value">{viewedPlayer.explorer_tokens}</span> Explorer ({viewedPlayer.explored_types?.length || 0}/5)</div>
+                <div className="token-item">🛡️ <span className="token-value">{viewedPlayer.guardian_tokens}</span> {guardianMult > 1 && <span style={{color:'var(--warning)', fontSize:'0.7rem'}}>(x{guardianMult})</span>} Guardian</div>
+                <div className="token-item">🧭 <span className="token-value">{viewedPlayer.explorer_tokens}</span> {explorerMult > 1 && <span style={{color:'var(--warning)', fontSize:'0.7rem'}}>(x{explorerMult})</span>} Explorer</div>
               </div>
               <div className="token-row">
                 <div className="token-item">🔖 <span className="token-value">{viewedPlayer.tolls_collected}</span> Tolls</div>
@@ -431,11 +448,18 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                     Built: {viewedPlayer.constructs.filter(c => c.tier === 'small').length}S / {viewedPlayer.constructs.filter(c => c.tier === 'medium').length}M / {viewedPlayer.constructs.filter(c => c.tier === 'large').length}L
                     — {viewedPlayer.constructs.length}/{state.constructs_end_count || 7}
                   </div>
-                  <div className="built-constructs">
+                  <div className="built-constructs" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {viewedPlayer.constructs.map((c, i) => (
-                      <div key={i} className="built-item">
-                        <span>{c.name} <span className={`mini-tier ${c.tier}`}>{c.tier[0].toUpperCase()}</span></span>
-                        <span className="built-vp">+{c.vp}</span>
+                      <div key={i} className="built-item" style={{ background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.name} <span className={`mini-tier ${c.tier}`}>{c.tier[0].toUpperCase()}</span></span>
+                          <span className="built-vp" style={{ color: 'var(--warning)', fontWeight: 'bold' }}>+{c.vp} VP</span>
+                        </div>
+                        {c.ability_desc && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--accent)', marginTop: '4px', fontStyle: 'italic' }}>
+                            {c.ability_desc}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -474,7 +498,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                 </div>
               )}
             </div>
-          )}
+          )})()}
         </div>
 
         {/* Activity Log */}
