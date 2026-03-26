@@ -662,36 +662,47 @@ body {
 }
 
 .rift-card {
-  background: var(--bg-card);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  background: linear-gradient(155deg, rgba(30, 30, 45, 0.9) 0%, rgba(15, 15, 20, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   padding: var(--space-md);
   width: 140px;
   text-align: center;
-  transition: all var(--transition);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
 }
 
 .rift-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: 100%;
+  opacity: 0.15;
+  background: radial-gradient(circle at top, white, transparent 70%);
+  pointer-events: none;
 }
 
-.rift-card[data-type="ember"]::before { background: var(--ember); }
-.rift-card[data-type="tide"]::before { background: var(--tide); }
-.rift-card[data-type="verdant"]::before { background: var(--verdant); }
-.rift-card[data-type="storm"]::before { background: var(--storm); }
-.rift-card[data-type="void"]::before { background: var(--void); }
+.rift-card[data-type="ember"] { border-top: 4px solid var(--ember); background: linear-gradient(155deg, rgba(239, 83, 80, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.rift-card[data-type="tide"] { border-top: 4px solid var(--tide); background: linear-gradient(155deg, rgba(41, 182, 246, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.rift-card[data-type="verdant"] { border-top: 4px solid var(--verdant); background: linear-gradient(155deg, rgba(102, 187, 106, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.rift-card[data-type="storm"] { border-top: 4px solid var(--storm); background: linear-gradient(155deg, rgba(171, 71, 188, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.rift-card[data-type="void"] { border-top: 4px solid var(--void); background: linear-gradient(155deg, rgba(158, 158, 158, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
 
 .rift-card.clickable { cursor: pointer; }
 .rift-card.clickable:hover {
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+  border-color: rgba(255, 255, 255, 0.4);
 }
+
+.rift-card.clickable[data-type="ember"]:hover { box-shadow: 0 15px 35px var(--ember-glow), 0 0 20px var(--ember-glow); }
+.rift-card.clickable[data-type="tide"]:hover { box-shadow: 0 15px 35px var(--tide-glow), 0 0 20px var(--tide-glow); }
+.rift-card.clickable[data-type="verdant"]:hover { box-shadow: 0 15px 35px var(--verdant-glow), 0 0 20px var(--verdant-glow); }
+.rift-card.clickable[data-type="storm"]:hover { box-shadow: 0 15px 35px var(--storm-glow), 0 0 20px var(--storm-glow); }
+.rift-card.clickable[data-type="void"]:hover { box-shadow: 0 15px 35px var(--void-glow), 0 0 20px var(--void-glow); }
 
 .rift-card.unstable { animation: riftShake 0.5s ease-in-out; }
 
@@ -755,46 +766,60 @@ body {
 /* === Shard Market === */
 .shard-market {
   display: flex;
-  gap: var(--space-sm);
+  gap: var(--space-md);
   flex-wrap: wrap;
   align-items: center;
 }
 
 .shard-token {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
+  width: 56px;
+  height: 64px;
+  border-radius: 16px 4px 16px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  border: 2px solid var(--border);
-  transition: all var(--transition);
+  font-size: 1.8rem;
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.4), inset 0 4px 8px rgba(255,255,255,0.4), inset 0 -4px 8px rgba(0,0,0,0.4);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
+  background-blend-mode: screen;
+}
+
+.shard-token::after {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: white;
+  filter: blur(2px);
+  opacity: 0.5;
 }
 
 .shard-token.clickable { cursor: pointer; }
 .shard-token.clickable:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transform: scale(1.15) translateY(-4px);
+  box-shadow: 0 12px 20px rgba(0,0,0,0.5), inset 0 4px 8px rgba(255,255,255,0.6);
 }
 
 .shard-token.selected {
-  transform: scale(1.15);
-  border-width: 3px;
+  transform: scale(1.15) translateY(-8px);
+  border: 2px solid white;
 }
 
-.shard-token[data-type="ember"] { background: var(--ember-glow); border-color: var(--ember); }
-.shard-token[data-type="tide"] { background: var(--tide-glow); border-color: var(--tide); }
-.shard-token[data-type="verdant"] { background: var(--verdant-glow); border-color: var(--verdant); }
-.shard-token[data-type="storm"] { background: var(--storm-glow); border-color: var(--storm); }
-.shard-token[data-type="void"] { background: var(--void-glow); border-color: var(--void); }
+.shard-token[data-type="ember"] { background: linear-gradient(135deg, #ff8a65 0%, #b71c1c 100%); }
+.shard-token[data-type="tide"] { background: linear-gradient(135deg, #4fc3f7 0%, #01579b 100%); }
+.shard-token[data-type="verdant"] { background: linear-gradient(135deg, #81c784 0%, #1b5e20 100%); }
+.shard-token[data-type="storm"] { background: linear-gradient(135deg, #ba68c8 0%, #4a148c 100%); }
+.shard-token[data-type="void"] { background: linear-gradient(135deg, #e0e0e0 0%, #424242 100%); }
 
-.shard-token.selected[data-type="ember"] { box-shadow: 0 0 15px var(--ember-glow); }
-.shard-token.selected[data-type="tide"] { box-shadow: 0 0 15px var(--tide-glow); }
-.shard-token.selected[data-type="verdant"] { box-shadow: 0 0 15px var(--verdant-glow); }
-.shard-token.selected[data-type="storm"] { box-shadow: 0 0 15px var(--storm-glow); }
-.shard-token.selected[data-type="void"] { box-shadow: 0 0 15px var(--void-glow); }
+.shard-token.selected[data-type="ember"] { box-shadow: 0 10px 25px var(--ember-glow), inset 0 2px 4px rgba(255,255,255,0.5); }
+.shard-token.selected[data-type="tide"] { box-shadow: 0 10px 25px var(--tide-glow), inset 0 2px 4px rgba(255,255,255,0.5); }
+.shard-token.selected[data-type="verdant"] { box-shadow: 0 10px 25px var(--verdant-glow), inset 0 2px 4px rgba(255,255,255,0.5); }
+.shard-token.selected[data-type="storm"] { box-shadow: 0 10px 25px var(--storm-glow), inset 0 2px 4px rgba(255,255,255,0.5); }
+.shard-token.selected[data-type="void"] { box-shadow: 0 10px 25px var(--void-glow), inset 0 2px 4px rgba(255,255,255,0.5); }
 
 /* === Construct Display === */
 .construct-display {
@@ -804,23 +829,36 @@ body {
 }
 
 .construct-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--bg-card) 0%, rgba(20,20,30,0.8) 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
   padding: var(--space-md);
   width: 200px;
-  transition: all var(--transition);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.construct-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .construct-card.affordable {
-  border-color: var(--success);
+  border-color: rgba(102,187,106,0.6);
   cursor: pointer;
 }
 
 .construct-card.affordable:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 15px rgba(102,187,106,0.2);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(102,187,106,0.3);
+  border-color: var(--success);
 }
 
 .construct-card .tier-badge {
@@ -1486,15 +1524,23 @@ body {
 }
 
 .contract-card {
-  background: rgba(155,89,182,0.08);
-  border: 1px solid rgba(155,89,182,0.2);
+  background: linear-gradient(135deg, rgba(155,89,182,0.1) 0%, rgba(30,20,40,0.6) 100%);
+  border: 1px solid rgba(155,89,182,0.3);
+  border-left: 4px solid #9b59b6;
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 0.78rem;
+  padding: 10px 12px;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.contract-card:hover {
+  transform: translateX(4px);
+  border-color: #9b59b6;
 }
 
 .contract-vp {

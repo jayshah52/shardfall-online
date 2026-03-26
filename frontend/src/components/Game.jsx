@@ -393,12 +393,23 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           </div>
           {viewedPlayer && (
             <div className="player-info">
-              <div className="player-name-row">
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block' }} />
+              <div className="player-name-row" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: viewedPlayer.color, display: 'inline-block', boxShadow: `0 0 10px ${viewedPlayer.color}` }} />
                 {viewedPlayer.name}
-                {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 6 }}>YOU</span>}
-                {viewedPlayer.seeker && <span className="seeker-badge">{viewedPlayer.seeker.icon} {viewedPlayer.seeker.name}</span>}
+                {viewedPlayer.index === myIndex && <span className="lobby-you-badge" style={{ marginLeft: 8 }}>YOU</span>}
               </div>
+              
+              {viewedPlayer.seeker && (
+                <div className="active-power-card" style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '16px', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>{viewedPlayer.seeker.icon}</span>
+                    <span style={{ fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', fontSize: '0.85rem', color: 'var(--accent)' }}>{viewedPlayer.seeker.name}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.3' }}>
+                    "{viewedPlayer.seeker.ability}"
+                  </div>
+                </div>
+              )}
               <div className="shards-display">
                 {SHARD_TYPES.map(type => (
                   <div key={type} className="shard-count" data-type={type}>
