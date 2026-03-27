@@ -11,10 +11,10 @@ async function fetchJSON(url, opts = {}) {
 
 // === ROOM API ===
 
-export const createRoom = (hostName, playerCount) =>
+export const createRoom = (hostName, playerCount, mode = 'normal') =>
   fetchJSON(`${API}/rooms`, {
     method: 'POST',
-    body: JSON.stringify({ host_name: hostName, player_count: playerCount }),
+    body: JSON.stringify({ host_name: hostName, player_count: playerCount, mode }),
   });
 
 export const joinRoom = (code, playerName) =>

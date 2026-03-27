@@ -1,58 +1,61 @@
 """
 SHARDFALL V2 — Game Constants & Card Definitions
-Updated: claims/tolls, contracts, 24 constructs, 8 anomalies, 20 rifts, 15 contracts.
+Updated: Gems instead of Shards, Game Modes (Fast/Normal).
 """
 
-SHARD_TYPES = ["ember", "tide", "verdant", "storm", "void"]
+GEM_TYPES = ["ember", "tide", "verdant", "storm", "void"]
+SHARD_TYPES = GEM_TYPES # Alias for transition
 
-SHARD_COLORS = {
-    "ember": "#e74c3c", "tide": "#3498db", "verdant": "#27ae60",
-    "storm": "#f1c40f", "void": "#9b59b6",
+GEM_COLORS = {
+    "ember": "#ff8a65", "tide": "#4fc3f7", "verdant": "#81c784",
+    "storm": "#ba68c8", "void": "#e0e0e0",
 }
+SHARD_COLORS = GEM_COLORS
 
-SHARD_ICONS = {
-    "ember": "🔴", "tide": "🔵", "verdant": "🟢", "storm": "🟡", "void": "🟣",
+GEM_ICONS = {
+    "ember": "🔥", "tide": "💧", "verdant": "🌿", "storm": "⚡", "void": "🔮",
 }
+SHARD_ICONS = GEM_ICONS
 
 HAND_LIMIT = 10
 
-# 20 Rift Cards: 4 per type with stabilities 2, 3, 3, 4
-RIFT_CARDS = []
-_rift_id = 0
+# 20 Portal Cards: 4 per type with stabilities 2, 3, 3, 4
+PORTAL_CARDS = []
+_portal_id = 0
 for _stype in SHARD_TYPES:
     for _stab in [2, 3, 3, 4]:
-        RIFT_CARDS.append({"id": _rift_id, "type": _stype, "max_stability": _stab})
-        _rift_id += 1
+        PORTAL_CARDS.append({"id": _portal_id, "type": _stype, "max_stability": _stab})
+        _portal_id += 1
 
 # 8 Anomaly Cards — shuffled throughout the ENTIRE deck
 ANOMALY_CARDS = [
     {"id": "dimensional_surge", "name": "Dimensional Surge",
      "description": "All active Rifts lose 1 stability!", "icon": "🌋"},
-    {"id": "shard_rain", "name": "Shard Rain",
-     "description": "Every player gains 2 random Shards!", "icon": "🎁"},
+    {"id": "gem_rain", "name": "Gem Rain",
+     "description": "Every player gains 2 random Gems!", "icon": "🎁"},
     {"id": "reality_shift", "name": "Reality Shift",
      "description": "All Constructs in display are replaced!", "icon": "🔄"},
-    {"id": "rift_storm", "name": "Rift Storm",
-     "description": "Lowest-stability Rift collapses immediately!", "icon": "⚡"},
+    {"id": "rift_storm", "name": "Portal Storm",
+     "description": "Lowest-stability Portal collapses immediately!", "icon": "⚡"},
     {"id": "dimensional_calm", "name": "Dimensional Calm",
-     "description": "All Rifts gain 1 stability (up to max).", "icon": "💫"},
+     "description": "All Portals gain 1 stability (up to max).", "icon": "💫"},
     {"id": "convergence", "name": "Convergence",
-     "description": "Each player with 2+ shards contributes 2 → Fracture −1, +1 Guardian Token.", "icon": "🤝"},
+     "description": "Each player with 2+ gems contributes 2 → Fracture −1, +1 Guardian Token.", "icon": "🤝"},
     {"id": "market_surge", "name": "Market Surge",
-     "description": "Market refills to 6 shards! Each player takes 1 free shard.", "icon": "🎭"},
-    {"id": "rift_merge", "name": "Rift Merge",
-     "description": "Lowest-stability Rift is removed. Second-lowest gains +2 stability!", "icon": "🌀"},
+     "description": "Market refills to 6 gems! Each player takes 1 free gem.", "icon": "🎭"},
+    {"id": "rift_merge", "name": "Portal Merge",
+     "description": "Lowest-stability Portal is removed. Second-lowest gains +2 stability!", "icon": "🌀"},
 ]
 
 # 22 Construct Cards  — SMALL (9) / MEDIUM (7) / LARGE (6)
 CONSTRUCT_CARDS = [
-    # === SMALL (3-4 shards, 2-3 VP) ===
-    {"id": 0, "name": "Shard Lens", "tier": "small", "vp": 2,
+    # === SMALL (3-4 gems, 2-3 VP) ===
+    {"id": 0, "name": "Gem Lens", "tier": "small", "vp": 2,
      "cost": {"ember": 2, "tide": 1}, "ability": "gather_bonus",
-     "ability_desc": "Gather takes 2 Shards instead of 1"},
+     "ability_desc": "Collect takes 2 Gems instead of 1"},
     {"id": 1, "name": "Drift Anchor", "tier": "small", "vp": 2,
      "cost": {"verdant": 2, "storm": 1}, "ability": "stabilize_discount",
-     "ability_desc": "Stabilize costs 1 Shard instead of 2"},
+     "ability_desc": "Stabilize costs 1 Gem instead of 2"},
     {"id": 2, "name": "Trade Post", "tier": "small", "vp": 2,
      "cost": {"tide": 1, "verdant": 1, "storm": 1}, "ability": "trade_discount",
      "ability_desc": "Bank trades at 2:1 instead of 3:1"},
@@ -62,21 +65,21 @@ CONSTRUCT_CARDS = [
     {"id": 4, "name": "Compass Stone", "tier": "small", "vp": 2,
      "cost": {"void": 2}, "ability": "extra_explorer",
      "ability_desc": "Gain 1 Explorer Token when built"},
-    {"id": 5, "name": "Shard Forge", "tier": "small", "vp": 2,
-     "cost": {"ember": 3}, "ability": "shard_convert",
-     "ability_desc": "Once per round: convert 1 shard to any type"},
+    {"id": 5, "name": "Gem Forge", "tier": "small", "vp": 2,
+     "cost": {"ember": 3}, "ability": "gem_convert",
+     "ability_desc": "Once per round: convert 1 gem to any type"},
     {"id": 6, "name": "Echo Chamber", "tier": "small", "vp": 3,
      "cost": {"void": 2, "ember": 1}, "ability": None, "ability_desc": None},
     {"id": 7, "name": "Toll Gate", "tier": "small", "vp": 2,
      "cost": {"storm": 2, "tide": 1}, "ability": "toll_bonus",
-     "ability_desc": "Tolls you collect are 2 shards instead of 1"},
+     "ability_desc": "Tolls you collect are 2 gems instead of 1"},
     {"id": 8, "name": "Scout Tower", "tier": "small", "vp": 2,
-     "cost": {"verdant": 1, "tide": 1, "void": 1}, "ability": "peek_deck",
-     "ability_desc": "See top card of the Rift Deck at start of your turn"},
-    # === MEDIUM (5-6 shards, 4-5 VP) — Requires 2 Small ===
-    {"id": 9, "name": "Rift Engine", "tier": "medium", "vp": 4,
+     "cost": {"verdant": 1, "tide": 1, "void": 1}, "ability": "peek_portal_deck",
+     "ability_desc": "See top card of the Portal Deck at start of your turn"},
+    # === MEDIUM (5-6 gems, 4-5 VP) — Requires 2 Small ===
+    {"id": 9, "name": "Portal Engine", "tier": "medium", "vp": 4,
      "cost": {"ember": 2, "tide": 2, "void": 1}, "ability": "extract_discount",
-     "ability_desc": "Your Extracts cost 1 less stability"},
+     "ability_desc": "Your Mining costs 1 less stability"},
     {"id": 10, "name": "Harmony Spire", "tier": "medium", "vp": 5,
      "cost": {"verdant": 2, "storm": 2, "tide": 1},
      "ability": None, "ability_desc": None},
@@ -94,8 +97,8 @@ CONSTRUCT_CARDS = [
      "ability_desc": "Your claims persist 2 rounds instead of being cleared"},
     {"id": 15, "name": "Market Engine", "tier": "medium", "vp": 4,
      "cost": {"tide": 2, "verdant": 2, "ember": 1}, "ability": "market_bonus",
-     "ability_desc": "When you Gather, also take 1 random shard from bag"},
-    # === LARGE (7+ shards, 6-8 VP) — Requires 2 Small + 1 Medium ===
+     "ability_desc": "When you Collect, also take 1 random gem from bag"},
+    # === LARGE (7+ gems, 6-8 VP) — Requires 2 Small + 1 Medium ===
     {"id": 16, "name": "Nexus Spire", "tier": "large", "vp": 7,
      "cost": {"ember": 2, "tide": 2, "verdant": 2, "void": 1},
      "ability": "double_guardian",
@@ -118,60 +121,60 @@ CONSTRUCT_CARDS = [
      "ability_desc": "At game end, gain +1 VP per toll collected"},
 ]
 
-# 8 Seeker Cards (same as V1)
+# 8 Seeker Cards
 SEEKER_CARDS = [
     {"id": "ember_seeker", "name": "Ember Seeker", "icon": "🔥",
-     "color": "#e74c3c", "power": "ember_extract_bonus",
-     "description": "Ember Extracts give +1 extra Shard"},
-    {"id": "tide_seeker", "name": "Tide Seeker", "icon": "🌊",
-     "color": "#3498db", "power": "free_stabilize",
-     "description": "1 free Stabilize per round (no shard cost)"},
+     "color": "#ff8a65", "power": "ember_extract_bonus",
+     "description": "When you Harvest from an Ember Portal, you may pay 1 extra stability to gain 3 additional Gems instead of 2 (for Safe) or 4 (for Deep)."},
+    {"id": "tide_seeker", "name": "Tide Seeker", "icon": "💧",
+     "color": "#4fc3f7", "power": "free_stabilize",
+     "description": "1 free Stabilize per round (no gem cost)"},
     {"id": "verdant_seeker", "name": "Verdant Seeker", "icon": "🌿",
-     "color": "#27ae60", "power": "trade_discount",
+     "color": "#81c784", "power": "trade_discount",
      "description": "Bank trades cost 2:1 instead of 3:1"},
     {"id": "storm_seeker", "name": "Storm Seeker", "icon": "⚡",
-     "color": "#f1c40f", "power": "extra_action",
-     "description": "Take 3 actions per turn (max 1 Extract)"},
+     "color": "#ba68c8", "power": "extra_action",
+     "description": "Take 3 actions per turn (max 1 Harvest)"},
     {"id": "void_seeker", "name": "Void Seeker", "icon": "🔮",
-     "color": "#9b59b6", "power": "build_discount",
-     "description": "Constructs cost 1 fewer Shard (cheapest removed)"},
+     "color": "#e0e0e0", "power": "build_discount",
+     "description": "Constructs cost 1 fewer Gem (cheapest removed)"},
     {"id": "wanderer", "name": "Wanderer", "icon": "🧭",
      "color": "#1abc9c", "power": "double_explore",
-     "description": "Gain 2 Explorer Tokens when discovering a new rift type"},
+     "description": "Gain 2 Explorer Tokens when discovering a new Portal type"},
     {"id": "sentinel", "name": "Sentinel", "icon": "🛡️",
-     "color": "#7f8c8d", "power": "no_backlash",
-     "description": "Immune to Rift collapse backlash"},
+     "color": "#7f8c8d", "power": "collapse_bonus",
+     "description": "When a Portal collapses while you Extract, gain 2 random Gems and lose no Gems to backlash."},
     {"id": "diplomat", "name": "Diplomat", "icon": "🤝",
      "color": "#e67e22", "power": "toll_immune",
-     "description": "Never pays tolls when extracting from claimed Rifts"},
+     "description": "Never pays tolls when harvesting from claimed Portals"},
 ]
 
-# 15 Contract Cards — secret objectives
+# 15 Contract Cards
 CONTRACT_CARDS = [
     {"id": "the_guardian", "name": "The Guardian", "vp": 6, "icon": "🛡️",
      "requirement": "Have 5+ Guardian Tokens at game end"},
     {"id": "universal_explorer", "name": "Universal Explorer", "vp": 8, "icon": "🧭",
-     "requirement": "Discover all 5 rift types (1 Explorer per type)"},
+     "requirement": "Discover all 5 Portal types (Ember, Tide, Verdant, Storm, Void)"},
     {"id": "essence_hoarder", "name": "Essence Hoarder", "vp": 5, "icon": "💰",
-     "requirement": "End with exactly 10 shards (at hand limit)"},
+     "requirement": "End with exactly 10 gems (at hand limit)"},
     {"id": "master_builder", "name": "Master Builder", "vp": 7, "icon": "🏗️",
      "requirement": "Build 2+ Large Constructs"},
     {"id": "toll_collector", "name": "Toll Collector", "vp": 5, "icon": "🤝",
-     "requirement": "Collect 5+ shards from tolls during the game"},
-    {"id": "rift_warden", "name": "Rift Warden", "vp": 6, "icon": "🌀",
-     "requirement": "Stabilize 4+ different rifts"},
+     "requirement": "Collect 5+ gems from tolls during the game"},
+    {"id": "rift_warden", "name": "Portal Warden", "vp": 6, "icon": "🌀",
+     "requirement": "Stabilize 4+ different Portals"},
     {"id": "specialist", "name": "Specialist", "vp": 4, "icon": "🎯",
-     "requirement": "Have 8+ shards of a single type at game end"},
+     "requirement": "Have 8+ gems of a single type at game end"},
     {"id": "rainbow", "name": "Rainbow", "vp": 7, "icon": "💎",
-     "requirement": "End with 2+ of each shard type"},
+     "requirement": "End with 2+ of each gem type"},
     {"id": "trader", "name": "Trader", "vp": 5, "icon": "♻️",
      "requirement": "Complete 6+ trades (bank or player) during the game"},
-    {"id": "ember_lord", "name": "Ember Lord", "vp": 4, "icon": "🌋",
-     "requirement": "Extract from 3+ different Ember Rift cards"},
-    {"id": "tide_lord", "name": "Tide Lord", "vp": 4, "icon": "🌊",
-     "requirement": "Extract from 3+ different Tide Rift cards"},
+    {"id": "ember_lord", "name": "Ember Lord", "vp": 4, "icon": "🔥",
+     "requirement": "Harvest from 3+ different Ember Portal cards"},
+    {"id": "tide_lord", "name": "Tide Lord", "vp": 4, "icon": "💧",
+     "requirement": "Harvest from 3+ different Tide Portal cards"},
     {"id": "daredevil", "name": "Daredevil", "vp": 5, "icon": "💀",
-     "requirement": "Deep Extract 3+ times during the game"},
+     "requirement": "Deep Harvest 3+ times during the game"},
     {"id": "fortress_contract", "name": "Fortress", "vp": 6, "icon": "🏰",
      "requirement": "Build 3+ Constructs with abilities"},
     {"id": "world_saver", "name": "World Saver", "vp": 8, "icon": "🌍",
@@ -182,9 +185,9 @@ CONTRACT_CARDS = [
 
 CONSTRUCTS_END_COUNT = 7
 MARKET_SIZE = 4
-GATHER_COUNT = 1   # take 1 from market (nerfed from 2)
-STARTING_RIFTS = 3  # 3 starting rifts (up from 2)
-CONSTRUCT_DISPLAY_SIZE = 5  # show 5 constructs (up from 4)
+GATHER_COUNT = 1
+STARTING_PORTALS = 3
+CONSTRUCT_DISPLAY_SIZE = 5
 
 FRACTURE_THRESHOLDS = {2: 4, 3: 5, 4: 6, 5: 7}
 PLAYER_COLORS = ["#e74c3c", "#3498db", "#27ae60", "#f39c12", "#9b59b6"]
