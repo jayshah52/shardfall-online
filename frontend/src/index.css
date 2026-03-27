@@ -2058,3 +2058,74 @@ body {
   border-left: 2px solid var(--accent);
 }
 
+
+/* ========== TURN MODAL UX ========== */
+.turn-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001; /* Above anomalies */
+  cursor: pointer;
+}
+
+.turn-alert-content {
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%);
+  padding: 48px 64px;
+  border-radius: 32px;
+  border: 2px solid var(--accent);
+  text-align: center;
+  box-shadow: 0 30px 90px rgba(79, 195, 247, 0.4), inset 0 0 20px rgba(79, 195, 247, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.turn-alert-icon {
+  font-size: 3rem;
+  margin-bottom: 24px;
+  animation: bounce 1s infinite;
+}
+
+.turn-alert-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: 12px;
+  margin-right: -12px;
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+}
+
+.turn-alert-sub {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-top: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.turn-alert-timer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: var(--accent);
+  animation: timeLeft 3s linear forwards;
+}
+
+@keyframes timeLeft {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+

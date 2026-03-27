@@ -13,7 +13,7 @@ GEM_COLORS = {
 SHARD_COLORS = GEM_COLORS
 
 GEM_ICONS = {
-    "ember": "🔥", "tide": "💧", "verdant": "🌿", "storm": "⚡", "void": "🌐",
+    "ember": "🔥", "tide": "💧", "verdant": "🌿", "storm": "⚡", "void": "🔮",
 }
 SHARD_ICONS = GEM_ICONS
 

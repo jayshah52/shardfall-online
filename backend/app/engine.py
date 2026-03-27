@@ -5,6 +5,7 @@ rotating first player, anomalies throughout, enhanced scoring.
 """
 import random
 import uuid
+from datetime import datetime
 from .constants import (
     GEM_TYPES, PORTAL_CARDS, ANOMALY_CARDS, CONSTRUCT_CARDS,
     SEEKER_CARDS, CONTRACT_CARDS, FRACTURE_THRESHOLDS, GEM_ICONS,
@@ -29,6 +30,7 @@ class ShardFallEngine:
         self.first_large_builder = None  # track for Speed Builder contract
         self.discard_required = 0  # gems to discard
         self.active_trade = None  # dict tracking p2p trade state
+        self.latest_anomaly = None # Added for state tracking
         self.constructs_end_count = 5 if mode == "fast" else CONSTRUCTS_END_COUNT
 
         # Players
@@ -57,7 +59,13 @@ class ShardFallEngine:
         # 5 types * 4 cards = 20 portals. 8 anomalies / 2 acts = 4 anomalies.
         # Total per act: 10 + 4 = 14 cards. (2 * 14 = 28 cards total)
         p_by_type = {t: [dict(c) for c in PORTAL_CARDS if c["type"] == t] for t in GEM_TYPES}
-        anoms = [{"is_anomaly": True, **a} for a in ANOMALY_CARDS]
+        # Assign unique instance IDs to ensure frontend can distinguish repeated anomalies
+        anoms = []
+        for i, a in enumerate(ANOMALY_CARDS):
+            anom_copy = dict(a)
+            anom_copy["instance_id"] = f"anom_{uuid.uuid4().hex[:6]}"
+            anom_copy["is_anomaly"] = True
+            anoms.append(anom_copy)
         random.shuffle(anoms)
         
         self.portal_deck = []
@@ -1319,6 +1327,7 @@ class ShardFallEngine:
             "discard_required": self.discard_required,
             "hand_limit": HAND_LIMIT,
             "active_trade": self.active_trade,
+            "latest_anomaly": self.latest_anomaly, # Added for frontend triggers
             "constructs_end_count": self.constructs_end_count,
             "players": [
                 {

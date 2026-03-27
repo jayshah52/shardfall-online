@@ -5,7 +5,7 @@ const SEEKERS = [
   { name: 'Tide Seeker', power: 'free_stabilize', icon: '💧', color: '#4fc3f7', desc: '1 FREE Stabilize per round (0 gems).' },
   { name: 'Verdant Seeker', power: 'trade_discount', icon: '🌿', color: '#81c784', desc: 'Bank trades cost 2:1 instead of 3:1.' },
   { name: 'Storm Seeker', power: 'extra_action', icon: '⚡', color: '#f1c40f', desc: '3 actions per turn. (Max 1 Harvest per turn).' },
-  { name: 'Void Seeker', power: 'build_discount', icon: '🌐', color: '#9b59b6', desc: 'All Constructs cost 1 fewer Gem (cheapest removed).' },
+  { name: 'Void Seeker', power: 'build_discount', icon: '🔮', color: '#9b59b6', desc: 'All Constructs cost 1 fewer Gem (cheapest removed).' },
   { name: 'Wanderer', power: 'double_explore', icon: '🧭', color: '#1abc9c', desc: 'Gain 2 Explorer Tokens (instead of 1) for new Portal types.' },
   { name: 'Sentinel', power: 'collapse_bonus', icon: '🛡️', color: '#7f8c8d', desc: 'Immune to backlash. Gain 2 random Gems if a portal collapses during harvest.' },
   { name: 'Diplomat', power: 'toll_immune', icon: '🤝', color: '#e67e22', desc: 'Never pays Tolls when harvesting from claimed Portals.' }
@@ -38,27 +38,27 @@ const CONSTRUCTS = {
     { name: 'Drift Anchor', cost: '🌿x2,⚡x1', vp: 2, desc: 'Stabilize action costs 1 gem instead of 2.' },
     { name: 'Trade Post', cost: '💧x1,🌿x1,⚡x1', vp: 2, desc: 'Bank trades are 2:1.' },
     { name: 'Warden\'s Seal', cost: '🔥💧🌿⚡', vp: 3, desc: 'High VP foundation.' },
-    { name: 'Compass Stone', cost: '🌐x2', vp: 2, desc: 'Gain 1 Explorer Token immediately.' },
+    { name: 'Compass Stone', cost: '🔮x2', vp: 2, desc: 'Gain 1 Explorer Token immediately.' },
     { name: 'Gem Forge', cost: '🔥x3', vp: 2, desc: 'Free: Convert 1 gem to any other type once per round.' },
-    { name: 'Echo Chamber', cost: '🌐x2,🔥x1', vp: 3, desc: 'Resonance chamber foundation.' },
+    { name: 'Echo Chamber', cost: '🔮x2,🔥x1', vp: 3, desc: 'Resonance chamber foundation.' },
     { name: 'Toll Gate', cost: '⚡x2,💧x1', vp: 2, desc: 'Tolls you collect are 2 gems instead of 1.' },
-    { name: 'Scout Tower', cost: '🌿x1,💧x1,🌐x1', vp: 2, desc: 'See next Portal card at start of turn.' }
+    { name: 'Scout Tower', cost: '🌿x1,💧x1,🔮x1', vp: 2, desc: 'See next Portal card at start of turn.' }
   ],
   medium: [
-    { name: 'Portal Engine', cost: '🔥x2,💧x2,🌐x1', vp: 4, desc: 'Harvesting costs 1 less stability.' },
+    { name: 'Portal Engine', cost: '🔥x2,💧x2,🔮x1', vp: 4, desc: 'Harvesting costs 1 less stability.' },
     { name: 'Harmony Spire', cost: '🌿x2,⚡x2,💧x1', vp: 5, desc: 'High VP mid-game engine.' },
     { name: 'Crystal Bastion', cost: '💧x2,🌿x2,⚡x2', vp: 5, desc: 'Hand limit is raised to 12.' },
-    { name: 'Storm Harvester', cost: '⚡x3,🔥x1,🌐x1', vp: 4, desc: 'Storm-charged extraction engine.' },
-    { name: 'Alliance Hall', cost: '🔥💧🌿⚡🌐', vp: 5, desc: 'Diversity engine.' },
-    { name: 'Toll Fortress', cost: '🔥x2,⚡x2,🌐x1', vp: 4, desc: 'Your portal claims last 2 rounds instead of 1.' },
+    { name: 'Storm Harvester', cost: '⚡x3,🔥x1,🔮x1', vp: 4, desc: 'Storm-charged extraction engine.' },
+    { name: 'Alliance Hall', cost: '🔥💧🌿⚡🔮', vp: 5, desc: 'Diversity engine.' },
+    { name: 'Toll Fortress', cost: '🔥x2,⚡x2,🔮x1', vp: 4, desc: 'Your portal claims last 2 rounds instead of 1.' },
     { name: 'Market Engine', cost: '💧x2,🌿x2,🔥x1', vp: 4, desc: 'When you Collect, also take 1 random gem from supply.' }
   ],
   large: [
-    { name: 'Nexus Spire', cost: '🔥x2,💧x2,🌿x2,🌐x1', vp: 7, desc: 'Stabilize gives 2 Guardian Tokens instead of 1.' },
+    { name: 'Nexus Spire', cost: '🔥x2,💧x2,🌿x2,🔮x1', vp: 7, desc: 'Stabilize gives 2 Guardian Tokens instead of 1.' },
     { name: 'World Anchor', cost: '⚡x4,🔥x2,💧x1', vp: 6, desc: 'If Fracture <= 2 at game end, gain +4 VP bonus.' },
-    { name: 'Guardian Citadel', cost: '💧x3,🌿x3,🌐x1', vp: 7, desc: 'Guardian Tokens worth 2 VP each at end game.' },
-    { name: 'Explorer Atlas', cost: '⚡x2,🔥x2,🌿x2,🌐x1', vp: 7, desc: 'Explorer Tokens worth 2 VP each at end game.' },
-    { name: 'Dimensional Forge', cost: '🔥🔥💧💧🌿🌿⚡⚡🌐🌐', vp: 8, desc: 'The ultimate VP construct.' },
+    { name: 'Guardian Citadel', cost: '💧x3,🌿x3,🔮x1', vp: 7, desc: 'Guardian Tokens worth 2 VP each at end game.' },
+    { name: 'Explorer Atlas', cost: '⚡x2,🔥x2,🌿x2,🔮x1', vp: 7, desc: 'Explorer Tokens worth 2 VP each at end game.' },
+    { name: 'Dimensional Forge', cost: '🔥🔥💧💧🌿🌿⚡⚡🔮🔮', vp: 8, desc: 'The ultimate VP construct.' },
     { name: 'Toll Empire', cost: '⚡x3,🔥x2,💧x2', vp: 6, desc: '+1 VP per gem collected via tolls.' }
   ]
 };
