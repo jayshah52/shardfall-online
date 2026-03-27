@@ -598,6 +598,9 @@ class ShardFallEngine:
                 return {"error": f"Portal only has {portal['stability']} stability — Deep Harvest needs {total_cost}. Try Safe Harvest instead."}
             else:
                 return {"error": f"Portal only has {portal['stability']} stability — Harvest needs {total_cost} (sensitivity: +{sensitivity}). Stabilize first!"}
+        
+        # ACTUALLY SUBTRACT STABILITY
+        portal["stability"] -= total_cost
 
         # Gems gained
         base_gems = 4 if deep else 2
@@ -759,8 +762,15 @@ class ShardFallEngine:
             self._log("info", f"🛡️ {player['name']} used their FREE stabilize (Water Seeker)")
 
         portal["stability"] = min(portal["max_stability"], portal["stability"] + 1)
+        
+        # Track for Portal Warden contract
+        if portal["id"] not in player["portals_stabilized"]:
+            player["portals_stabilized"].append(portal["id"])
 
-        cost_str = "free" if is_free else f"{self._get_stabilize_cost(player)} Gems"
+        tokens = 2 if self._player_has_ability(player, "double_guardian") else 1
+        player["guardian_tokens"] += tokens
+
+        cost_str = "free" if has_free else f"{self._get_stabilize_cost(player)} Gems"
         self._log("action",
             f"🛡️ {player['name']} stabilized {portal['type'].title()} Portal ({cost_str}) "
             f"— +{tokens} Guardian Token(s)")
