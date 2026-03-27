@@ -5,15 +5,15 @@ import TradeModal from './TradeModal'
 import ScoreModal from './ScoreModal'
 import PlayerTradeModal from './PlayerTradeModal'
 
-const SHARD_ICONS = { ember: '🔴', tide: '🔵', verdant: '🟢', storm: '🟡', void: '🟣' }
-const SHARD_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
-const RIFT_ICONS = { ember: '🌋', tide: '🌊', verdant: '🌲', storm: '⛈️', void: '💎' }
-const SHARD_TYPES = ['ember', 'tide', 'verdant', 'storm', 'void']
+const GEM_ICONS = { fire: '🔥', water: '💧', earth: '🌿', air: '⚡', void: '🔮' }
+const GEM_LABELS = { fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', void: 'Void' }
+const PORTAL_ICONS = { fire: '🌋', water: '🌊', earth: '🌲', air: '⛈️', void: '💎' }
+const GEM_TYPES = ['fire', 'water', 'earth', 'air', 'void']
 
 export default function Game({ initialState, roomCode, playerId, myIndex, onLeave }) {
   const [state, setState] = useState(initialState)
   const [selectedAction, setSelectedAction] = useState(null)
-  const [selectedShards, setSelectedShards] = useState([])
+  const [selectedGems, setSelectedGems] = useState([])
   const [discardSelection, setDiscardSelection] = useState({})
   const [showTrade, setShowTrade] = useState(false)
   const [showConvert, setShowConvert] = useState(false)
@@ -23,7 +23,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const [showTutorial, setShowTutorial] = useState(true)
   const [error, setError] = useState(null)
   const [viewingPlayer, setViewingPlayer] = useState(myIndex)
-  const [animatingRifts, setAnimatingRifts] = useState(new Set())
+  const [animatingPortals, setAnimatingPortals] = useState(new Set())
   const [showContracts, setShowContracts] = useState(false)
   const logRef = useRef(null)
 
@@ -37,7 +37,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const isMyDiscard = isDiscard && isMyTurn
 
   const handLimit = myPlayer?.seeker?.power === 'hand_limit_up' ? 12 : (state.hand_limit || 10)
-  const myTotalShards = myPlayer ? Object.values(myPlayer.shards).reduce((a, b) => a + b, 0) : 0
+  const myTotalGems = myPlayer ? Object.values(myPlayer.gems || {}).reduce((a, b) => a + b, 0) : 0
 
   // Poll for game state when it's NOT my turn or trade is active
   useEffect(() => {
@@ -49,15 +49,15 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
       try {
         const newState = await getRoomState(roomCode, playerId)
         setState(prev => {
-          // Animate rift changes
-          const changedRifts = new Set()
-          newState.active_rifts?.forEach(r => {
-            const old = prev.active_rifts?.find(o => o.id === r.id)
-            if (old && old.stability !== r.stability) changedRifts.add(r.id)
+          // Animate portal changes
+          const changedPortals = new Set()
+          newState.active_portals?.forEach(r => {
+            const old = prev.active_portals?.find(o => o.id === r.id)
+            if (old && old.stability !== r.stability) changedPortals.add(r.id)
           })
-          if (changedRifts.size) {
-            setAnimatingRifts(changedRifts)
-            setTimeout(() => setAnimatingRifts(new Set()), 600)
+          if (changedPortals.size) {
+            setAnimatingPortals(changedPortals)
+            setTimeout(() => setAnimatingPortals(new Set()), 600)
           }
 
           if (newState.active_trade && (!prev.active_trade || prev.active_trade.initiator !== newState.active_trade.initiator)) {
@@ -74,7 +74,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   // Reset selections when turn changes
   useEffect(() => {
     setSelectedAction(null)
-    setSelectedShards([])
+    setSelectedGems([])
     setDiscardSelection({})
     if (state.current_player === myIndex) {
       setViewingPlayer(myIndex)
@@ -85,24 +85,24 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
     setError(null)
     try {
       const newState = await doAction(roomCode, playerId, action, params)
-      const changedRifts = new Set()
-      newState.active_rifts?.forEach(r => {
-        const old = state.active_rifts?.find(o => o.id === r.id)
-        if (old && old.stability !== r.stability) changedRifts.add(r.id)
+      const changedPortals = new Set()
+      newState.active_portals?.forEach(r => {
+        const old = state.active_portals?.find(o => o.id === r.id)
+        if (old && old.stability !== r.stability) changedPortals.add(r.id)
       })
-      if (changedRifts.size) {
-        setAnimatingRifts(changedRifts)
-        setTimeout(() => setAnimatingRifts(new Set()), 600)
+      if (changedPortals.size) {
+        setAnimatingPortals(changedPortals)
+        setTimeout(() => setAnimatingPortals(new Set()), 600)
       }
       setState(newState)
       setSelectedAction(null)
-      setSelectedShards([])
+      setSelectedGems([])
       setDiscardSelection({})
     } catch (e) {
       setError(e.message)
       setTimeout(() => setError(null), 4000)
     }
-  }, [roomCode, playerId, state.active_rifts])
+  }, [roomCode, playerId, state.active_portals])
 
   // Gather count
   const gatherCount = (() => {
@@ -111,32 +111,32 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
     return 1
   })()
 
-  // Rift sensitivity
-  const riftSensitivity = myPlayer ? Math.max(0, (myPlayer.constructs?.length || 0) - 2) : 0
+  // Portal sensitivity
+  const portalSensitivity = myPlayer ? Math.max(0, (myPlayer.constructs?.length || 0) - 2) : 0
   const extractDiscount = myPlayer?.constructs?.some(c => c.ability === 'extract_discount') ? 1 : 0
 
-  // === GATHER ===
+  // === COLLECT ===
   const handleMarketClick = (index) => {
-    if (selectedAction !== 'gather' || !isMyTurn) return
-    setSelectedShards(prev => {
+    if (selectedAction !== 'collect' || !isMyTurn) return
+    setSelectedGems(prev => {
       if (prev.includes(index)) return prev.filter(i => i !== index)
-      if (prev.length >= Math.min(gatherCount, state.shard_market.length))
+      if (prev.length >= Math.min(gatherCount, state.gem_market?.length || 0))
         return [...prev.slice(1), index]
       return [...prev, index]
     })
   }
 
-  const confirmGather = () => {
-    if (selectedShards.length > 0) act('gather', { shard_indices: selectedShards })
+  const confirmCollect = () => {
+    if (selectedGems.length > 0) act('collect', { gem_indices: selectedGems })
   }
 
-  // === EXTRACT ===
-  const handleRiftClick = (riftIndex, e) => {
+  // === HARVEST ===
+  const handlePortalClick = (portalIndex, e) => {
     if (!isMyTurn) return
-    if (selectedAction === 'extract') {
-      act('extract', { rift_index: riftIndex, deep: !!e?.shiftKey })
+    if (selectedAction === 'harvest') {
+      act('harvest', { portal_index: portalIndex, deep: !!e?.shiftKey })
     } else if (selectedAction === 'stabilize') {
-      act('stabilize', { rift_index: riftIndex })
+      act('stabilize', { portal_index: portalIndex })
     }
   }
 
@@ -149,9 +149,9 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const toggleDiscard = (type) => {
     setDiscardSelection(prev => {
       const cur = prev[type] || 0
-      const playerShards = myPlayer?.shards?.[type] || 0
+      const playerGems = myPlayer?.gems?.[type] || 0
       const totalSelected = Object.values(prev).reduce((a, b) => a + b, 0)
-      if (cur < playerShards && totalSelected < state.discard_required) {
+      if (cur < playerGems && totalSelected < state.discard_required) {
         return { ...prev, [type]: cur + 1 }
       }
       if (cur > 0) return { ...prev, [type]: cur - 1 }
@@ -161,7 +161,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
 
   const confirmDiscard = () => {
     const total = Object.values(discardSelection).reduce((a, b) => a + b, 0)
-    if (total === state.discard_required) act('discard', { shards: discardSelection })
+    if (total === state.discard_required) act('discard', { gems: discardSelection })
   }
 
   const canAfford = (construct) => {
@@ -173,7 +173,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
       cost[cheapest] = Math.max(0, cost[cheapest] - 1)
       if (cost[cheapest] === 0) delete cost[cheapest]
     }
-    return Object.entries(cost).every(([t, a]) => (myPlayer.shards[t] || 0) >= a)
+    return Object.entries(cost).every(([t, a]) => (myPlayer.gems?.[t] || 0) >= a)
   }
 
   const canBuildTier = (tier) => {
@@ -188,8 +188,8 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
 
   const isActionAvailable = (name) => isMyTurn && state.available_actions?.some(a => a.action === name)
 
-  const getClaimInfo = (rift) => {
-    const claim = state.rift_claims?.[String(rift.id)]
+  const getClaimInfo = (portal) => {
+    const claim = state.portal_claims?.[String(portal.id)]
     if (!claim) return null
     return state.players[claim.player]
   }
@@ -214,8 +214,8 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
             </div>
           )}
           {(isPlaying || isDiscard) && (
-            <div className={`hand-limit-badge ${myTotalShards >= handLimit ? 'full' : ''}`}>
-              ✋ {myTotalShards}/{handLimit}
+            <div className={`hand-limit-badge ${myTotalGems >= handLimit ? 'full' : ''}`}>
+              ✋ {myTotalGems}/{handLimit}
             </div>
           )}
         </div>
@@ -253,23 +253,23 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           <div className="peek-banner animate-slide-up">
             🔭 Scout Tower: Next card is {state.peek_deck[0].type === 'anomaly'
               ? `⚡ Anomaly: ${state.peek_deck[0].name}`
-              : `🌀 ${state.peek_deck[0].rift_type?.charAt(0).toUpperCase() + state.peek_deck[0].rift_type?.slice(1)} Rift`}
+              : `🌀 ${state.peek_deck[0].type?.charAt(0).toUpperCase() + state.peek_deck[0].type?.slice(1)} Portal`}
           </div>
         )}
 
         {/* Discard Mode */}
         {isMyDiscard && (
           <div className="discard-banner">
-            <h3>⚠️ Hand Limit Exceeded! Discard {state.discard_required} shard(s)</h3>
-            <p>Click shard types below to select which to discard</p>
+            <h3>⚠️ Hand Limit Exceeded! Discard {state.discard_required} gem(s)</h3>
+            <p>Click gem types below to select which to discard</p>
             <div className="discard-selector">
-              {SHARD_TYPES.map(type => {
-                const have = myPlayer?.shards?.[type] || 0
+              {GEM_TYPES.map(type => {
+                const have = myPlayer?.gems?.[type] || 0
                 const selecting = discardSelection[type] || 0
                 return have > 0 ? (
                   <button key={type} className="discard-shard-btn" data-type={type}
                     onClick={() => toggleDiscard(type)}>
-                    {SHARD_ICONS[type]} {SHARD_LABELS[type]}: {have} → {have - selecting}
+                    {GEM_ICONS[type]} {GEM_LABELS[type]}: {have} → {have - selecting}
                     {selecting > 0 && <span className="discard-count">−{selecting}</span>}
                   </button>
                 ) : null
@@ -282,42 +282,42 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           </div>
         )}
 
-        {/* Rift Zone */}
-        <section id="rift-zone">
+        {/* Portal Zone */}
+        <section id="portal-zone">
           <div className="section-label">
-            🌀 Rift Zone ({state.active_rifts.length} active, {state.rift_deck_remaining} in deck)
-            {selectedAction === 'extract' && <span className="helper-text">— Click a rift (Shift = Deep). {riftSensitivity > 0 ? `⚠️ Sensitivity +${riftSensitivity}` : ''} 🔖 = toll</span>}
-            {selectedAction === 'stabilize' && <span className="helper-text">— Click a damaged rift to stabilize</span>}
+            🌀 Portal Zone ({state.active_portals?.length || 0} active, {state.portal_deck_remaining || 0} in deck)
+            {selectedAction === 'harvest' && <span className="helper-text">— Click a portal (Shift = Deep). {portalSensitivity > 0 ? `⚠️ Sensitivity +${portalSensitivity}` : ''} 🔖 = toll</span>}
+            {selectedAction === 'stabilize' && <span className="helper-text">— Click a damaged portal to stabilize</span>}
           </div>
-          <div className="rift-zone">
-            {state.active_rifts.map((rift, i) => {
-              const clickable = isMyTurn && (selectedAction === 'extract' || (selectedAction === 'stabilize' && rift.stability < rift.max_stability))
-              const claimer = getClaimInfo(rift)
-              const safeCost = Math.max(0, 1 + riftSensitivity - extractDiscount)
-              const deepCost = Math.max(0, 2 + riftSensitivity - extractDiscount)
-              const canSafe = rift.stability >= safeCost
-              const canDeep = rift.stability >= deepCost
+          <div className="portal-zone">
+            {state.active_portals.map((portal, i) => {
+              const clickable = isMyTurn && (selectedAction === 'harvest' || (selectedAction === 'stabilize' && portal.stability < portal.max_stability))
+              const claimer = getClaimInfo(portal)
+              const safeCost = Math.max(0, 1 + portalSensitivity - extractDiscount)
+              const deepCost = Math.max(0, 2 + portalSensitivity - extractDiscount)
+              const canSafe = portal.stability >= safeCost
+              const canDeep = portal.stability >= deepCost
               return (
-                <div key={rift.id}
-                  className={`rift-card ${clickable ? 'clickable' : ''} ${animatingRifts.has(rift.id) ? 'unstable' : ''} animate-pop-in`}
-                  data-type={rift.type}
-                  onClick={(e) => clickable && handleRiftClick(i, e)}
+                <div key={portal.id}
+                  className={`portal-card ${clickable ? 'clickable' : ''} ${animatingPortals.has(portal.id) ? 'unstable' : ''} animate-pop-in`}
+                  data-type={portal.type}
+                  onClick={(e) => handlePortalClick(i, e)}
                   style={claimer ? { boxShadow: `0 0 12px ${claimer.color}33`, borderColor: `${claimer.color}88` } : {}}>
                   {claimer && (
                     <div className="claim-badge" style={{ background: claimer.color }}>
                       🔖 {claimer.name.split(' ')[0]}
                     </div>
                   )}
-                  <div className="rift-type" style={{ color: `var(--${rift.type})` }}>{rift.type}</div>
-                  <span className="rift-icon">{RIFT_ICONS[rift.type]}</span>
+                  <div className="portal-type" style={{ color: `var(--${portal.type})` }}>{portal.type}</div>
+                  <span className="portal-icon">{PORTAL_ICONS[portal.type]}</span>
                   <div className="stability-bar">
-                    {Array.from({ length: rift.max_stability }, (_, j) => (
-                      <div key={j} className={`stability-pip ${j < rift.stability ? (rift.stability === 1 ? 'danger' : 'full') : 'empty'}`} />
+                    {Array.from({ length: portal.max_stability }, (_, j) => (
+                      <div key={j} className={`stability-pip ${j < portal.stability ? (portal.stability === 1 ? 'danger' : 'full') : 'empty'}`} />
                     ))}
                   </div>
-                  <div className="rift-stability-label">{rift.stability}/{rift.max_stability}</div>
-                  {selectedAction === 'extract' && isMyTurn && (
-                    <div className="rift-extract-info">
+                  <div className="portal-stability-label">{portal.stability}/{portal.max_stability}</div>
+                  {selectedAction === 'harvest' && isMyTurn && (
+                    <div className="portal-harvest-info">
                       <span className={canSafe ? '' : 'blocked'}>Safe: −{safeCost}{!canSafe && ' ❌'}</span>
                       <span className={canDeep ? '' : 'blocked'}>Deep: −{deepCost}{!canDeep && ' ❌'}</span>
                     </div>
@@ -325,27 +325,27 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                 </div>
               )
             })}
-            {state.active_rifts.length === 0 && <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No active rifts</p>}
+            {state.active_portals.length === 0 && <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No active portals</p>}
           </div>
         </section>
 
-        {/* Shard Market */}
-        <section id="shard-market">
+        {/* Gem Market */}
+        <section id="gem-market-section">
           <div className="section-label">
-            💎 Shard Market
-            {selectedAction === 'gather' && <span className="helper-text">— Select {Math.min(gatherCount, state.shard_market.length)} shard(s), then confirm</span>}
+            💎 Gem Market
+            {selectedAction === 'collect' && <span className="helper-text">— Select {Math.min(gatherCount, state.gem_market?.length || 0)} gem(s), then confirm</span>}
           </div>
-          <div className="shard-market">
-            {state.shard_market.map((shard, i) => (
+          <div className="gem-market">
+            {(state.gem_market || []).map((gem, i) => (
               <div key={i}
-                className={`shard-token ${selectedAction === 'gather' && isMyTurn ? 'clickable' : ''} ${selectedShards.includes(i) ? 'selected' : ''}`}
-                data-type={shard} onClick={() => handleMarketClick(i)} title={SHARD_LABELS[shard]}>
-                {SHARD_ICONS[shard]}
+                className={`gem-token ${selectedAction === 'collect' && isMyTurn ? 'clickable' : ''} ${selectedGems.includes(i) ? 'selected' : ''}`}
+                data-type={gem} onClick={() => handleMarketClick(i)} title={GEM_LABELS[gem]}>
+                {GEM_ICONS[gem]}
               </div>
             ))}
-            {selectedAction === 'gather' && selectedShards.length > 0 && (
-              <button className="btn btn-small btn-success" onClick={confirmGather}>
-                ✓ Take {selectedShards.length}
+            {selectedAction === 'collect' && selectedGems.length > 0 && (
+              <button className="btn btn-small btn-success" onClick={confirmCollect}>
+                ✓ Collect {selectedGems.length}
               </button>
             )}
           </div>
@@ -374,7 +374,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                     {Object.entries(c.cost).map(([type, amount]) =>
                       Array.from({ length: amount }, (_, j) => (
                         <div key={`${type}-${j}`} className="cost-pip" style={{ background: `var(--${type}-glow)`, border: `1px solid var(--${type})` }}>
-                          {SHARD_ICONS[type]}
+                          {GEM_ICONS[type]}
                         </div>
                       ))
                     )}
@@ -436,9 +436,9 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                 </div>
               )}
               <div className="shards-display">
-                {SHARD_TYPES.map(type => (
+                {GEM_TYPES.map(type => (
                    <div key={type} className="shard-count" data-type={type}>
-                    {SHARD_ICONS[type]} {viewedPlayer.shards[type]}
+                    {GEM_ICONS[type]} {viewedPlayer.gems?.[type] || 0}
                   </div>
                 ))}
               </div>
@@ -533,8 +533,8 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
       {isMyTurn && isPlaying && (
         <div className="action-bar" id="action-bar">
           {[
-            { key: 'gather', icon: '💎', label: 'Gather' },
-            { key: 'extract', icon: '⛏️', label: 'Extract' },
+            { key: 'collect', icon: '💎', label: 'Collect' },
+            { key: 'harvest', icon: '⛏️', label: 'Harvest' },
             { key: 'build', icon: '🏗️', label: 'Build' },
             { key: 'stabilize', icon: '🛡️', label: 'Stabilize' },
             { key: 'trade_bank', icon: '🤝', label: 'Trade' },
@@ -544,7 +544,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               disabled={!isActionAvailable(key)}
               onClick={() => {
                 if (key === 'trade_bank') { setSelectedAction('trade_bank'); setShowTrade(true) }
-                else { setSelectedAction(selectedAction === key ? null : key); setSelectedShards([]) }
+                else { setSelectedAction(selectedAction === key ? null : key); setSelectedGems([]) }
               }}>
               <span className="action-icon">{icon}</span> {label}
               <span className="helper-tooltip">
@@ -597,15 +597,15 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
       {showConvert && (
         <div className="modal-overlay" onClick={() => setShowConvert(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>🔧 Shard Forge — Convert (Free Action)</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Convert 1 shard to any other type. Does not cost an action.</p>
+            <h2>🔧 Gem Forge — Convert (Free Action)</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Convert 1 gem to any other type. Does not cost an action.</p>
             <div className="trade-section">
               <label>Convert from:</label>
               <div className="trade-options">
-                {SHARD_TYPES.map(t => (
+                {GEM_TYPES.map(t => (
                   <button key={t} className={`trade-option ${convertFrom === t ? 'selected' : ''}`}
-                    onClick={() => setConvertFrom(t)} disabled={(myPlayer?.shards?.[t] || 0) < 1}>
-                    {SHARD_ICONS[t]} {SHARD_LABELS[t]} ({myPlayer?.shards?.[t] || 0})
+                    onClick={() => setConvertFrom(t)} disabled={(myPlayer?.gems?.[t] || 0) < 1}>
+                    {GEM_ICONS[t]} {GEM_LABELS[t]} ({myPlayer?.gems?.[t] || 0})
                   </button>
                 ))}
               </div>
@@ -613,10 +613,10 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
             <div className="trade-section">
               <label>Convert to:</label>
               <div className="trade-options">
-                {SHARD_TYPES.filter(t => t !== convertFrom).map(t => (
+                {GEM_TYPES.filter(t => t !== convertFrom).map(t => (
                   <button key={t} className={`trade-option ${convertTo === t ? 'selected' : ''}`}
                     onClick={() => setConvertTo(t)}>
-                    {SHARD_ICONS[t]} {SHARD_LABELS[t]}
+                    {GEM_ICONS[t]} {GEM_LABELS[t]}
                   </button>
                 ))}
               </div>

@@ -9,6 +9,8 @@ export default function Home({ onRoomJoined }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  const [gameMode, setGameMode] = useState('normal') // normal or fast
+
   // Check URL for room code (shared link)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -20,12 +22,12 @@ export default function Home({ onRoomJoined }) {
   }, [])
 
   const handleCreate = async () => {
-    console.log("handleCreate CALLED with name:", name, "playerCount:", playerCount);
+    console.log("handleCreate CALLED with name:", name, "playerCount:", playerCount, "mode:", gameMode);
     if (!name.trim()) { setError('Enter your name'); return }
     setLoading(true); setError(null)
     try {
       console.log("Calling API createRoom...");
-      const data = await createRoom(name.trim(), playerCount)
+      const data = await createRoom(name.trim(), playerCount, gameMode)
       console.log("API returned:", data);
       localStorage.setItem('shardfall_name', name.trim())
       localStorage.setItem('shardfall_room', data.room_code)
@@ -74,7 +76,7 @@ export default function Home({ onRoomJoined }) {
           </div>
           {error && <p className="home-error">{error}</p>}
           <p className="home-footer">
-            V2: Rift Claims & Tolls · Contracts · Hand Limit · Tier Gating
+            V2: Portal Claims & Tolls · Contracts · Hand Limit · Tier Gating
           </p>
         </div>
       )}
@@ -83,14 +85,40 @@ export default function Home({ onRoomJoined }) {
         <div className="landing-form">
           <h2>⚔️ Create Game</h2>
           <p className="home-welcome">Playing as <strong>{name}</strong></p>
-          <div className="player-count-controls">
-            <button className="btn btn-small btn-outline" onClick={() => setPlayerCount(Math.max(2, playerCount - 1))} disabled={playerCount <= 2}>−</button>
-            <span>{playerCount} Players</span>
-            <button className="btn btn-small btn-outline" onClick={() => setPlayerCount(Math.min(5, playerCount + 1))} disabled={playerCount >= 5}>+</button>
+          
+          <div className="home-input-group">
+            <label>Player Count</label>
+            <div className="player-count-controls">
+              <button className="btn btn-small btn-outline" onClick={() => setPlayerCount(Math.max(2, playerCount - 1))} disabled={playerCount <= 2}>−</button>
+              <span>{playerCount} Players</span>
+              <button className="btn btn-small btn-outline" onClick={() => setPlayerCount(Math.min(5, playerCount + 1))} disabled={playerCount >= 5}>+</button>
+            </div>
           </div>
+
+          <div className="home-input-group">
+            <label>Game Mode</label>
+            <div className="mode-toggle">
+              <button 
+                className={`btn btn-small ${gameMode === 'normal' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setGameMode('normal')}
+              >
+                Standard (7)
+              </button>
+              <button 
+                className={`btn btn-small ${gameMode === 'fast' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setGameMode('fast')}
+              >
+                Fast Mode (5)
+              </button>
+            </div>
+            <p className="mode-desc">
+              {gameMode === 'fast' ? "✨ 5 Constructs to win. Fast-paced gating." : "📜 7 Constructs to win. Standard strategic depth."}
+            </p>
+          </div>
+
           {error && <p className="home-error">{error}</p>}
-          <button className="btn btn-primary btn-full" onClick={handleCreate} disabled={loading}>
-            {loading ? '⏳ Creating...' : '🌀 Open the Rifts'}
+          <button className="btn btn-primary btn-full" onClick={handleCreate} disabled={loading} style={{ marginTop: 8 }}>
+            {loading ? '⏳ Creating...' : '🌀 Open the Portals'}
           </button>
           <button className="btn btn-outline btn-small" onClick={() => { setMode('menu'); setError(null) }} style={{ marginTop: 12 }}>
             ← Back

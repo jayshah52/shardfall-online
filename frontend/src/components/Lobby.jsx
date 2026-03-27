@@ -61,7 +61,9 @@ export default function Lobby({ roomCode, playerId, initialState, onGameStart, o
   return (
     <div className="landing">
       <h1 className="landing-title">SHARDFALL</h1>
-      <p className="landing-subtitle">Waiting Room</p>
+      <p className="landing-subtitle">
+        Waiting Room &bull; <span className={`mode-badge ${state.room_mode || 'normal'}`}>{(state.room_mode || 'normal').toUpperCase()} MODE</span>
+      </p>
 
       <div className="landing-form lobby-form">
         <div className="lobby-code-section">

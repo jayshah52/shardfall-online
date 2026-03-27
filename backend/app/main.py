@@ -19,6 +19,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 class CreateRoomRequest(BaseModel):
     host_name: str
     player_count: int
+    mode: str = "normal"
 
 class JoinRoomRequest(BaseModel):
     player_name: str
@@ -50,10 +51,12 @@ def api_create_room(req: CreateRoomRequest):
     if req.player_count < 2 or req.player_count > 5:
         raise HTTPException(400, "Need 2-5 players")
     name = req.host_name.strip() or "Host"
-    room, host_id = create_room(name, req.player_count)
+    mode = req.mode if req.mode in ["normal", "fast"] else "normal"
+    room, host_id = create_room(name, req.player_count, mode)
     return {
         "room_code": room.code,
         "player_id": host_id,
+        "room_mode": mode,
         **room.get_state(host_id),
     }
 

@@ -13,9 +13,10 @@ from .engine import ShardFallEngine
 rooms = {}
 
 class Room:
-    def __init__(self, host_name: str, player_count: int):
+    def __init__(self, host_name: str, player_count: int, mode: str = "normal"):
         self.code = self._gen_code()
         self.player_count = player_count
+        self.mode = mode
         self.players: list[dict] = []
         self.engine: ShardFallEngine | None = None
         self.created_at = datetime.now()
@@ -55,7 +56,7 @@ class Room:
         if not self.is_full() or self.engine is not None:
             return False
         names = [p["name"] for p in self.players]
-        self.engine = ShardFallEngine(names)
+        self.engine = ShardFallEngine(names, mode=self.mode)
         return True
 
     def get_state(self, player_id: Optional[str] = None) -> dict:
@@ -66,6 +67,7 @@ class Room:
             "room_code": self.code,
             "room_status": "playing" if self.engine else "waiting",
             "player_count": self.player_count,
+            "room_mode": self.mode,
             "room_players": [
                 {
                     "name": p["name"],
@@ -98,8 +100,8 @@ class Room:
         return state
 
 
-def create_room(host_name: str, player_count: int) -> Tuple[Room, str]:
-    room = Room(host_name, player_count)
+def create_room(host_name: str, player_count: int, mode: str = "normal") -> Tuple[Room, str]:
+    room = Room(host_name, player_count, mode)
     rooms[room.code] = room
     return room, room.host_id
 

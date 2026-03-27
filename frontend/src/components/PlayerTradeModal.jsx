@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
-const SHARD_TYPES = ["ember", "tide", "verdant", "storm", "void"]
-const SHARD_ICONS = { "ember": "🔴", "tide": "🔵", "verdant": "🟢", "storm": "🟡", "void": "🟣" }
+const GEM_TYPES = ['fire', 'water', 'earth', 'air', 'void']
+const GEM_ICONS = { fire: '🔥', water: '💧', earth: '🌿', air: '⚡', void: '🔮' }
 
 export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
   const [give, setGive] = useState({})
@@ -14,7 +14,7 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
   const adjustAmt = (obj, setter, type, delta) => {
     setter(prev => {
       const v = (prev[type] || 0) + delta
-      const max = delta > 0 && obj === give ? (myPlayer.shards[type] || 0) : 99
+      const max = delta > 0 && obj === give ? (myPlayer.gems?.[type] || 0) : 99
       if (v < 0 || v > max) return prev
       const n = { ...prev, [type]: v }
       if (n[type] === 0) delete n[type]
@@ -22,17 +22,17 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
     })
   }
 
-  const renderShardSelectors = (label, obj, setter, isGive) => (
+  const renderGemSelectors = (label, obj, setter, isGive) => (
     <div className="trade-section" style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
       <label>{label}</label>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-        {SHARD_TYPES.map(t => {
+        {GEM_TYPES.map(t => {
           const amt = obj[t] || 0
-          const have = myPlayer.shards[t] || 0
+          const have = myPlayer.gems?.[t] || 0
           const canAdd = isGive ? amt < have : true
           return (
             <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--bg-card)', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>
-              <span>{SHARD_ICONS[t]}</span>
+              <span>{GEM_ICONS[t]}</span>
               <button disabled={amt <= 0} onClick={() => adjustAmt(obj, setter, t, -1)} style={{ width: 24, height: 24, padding: 0, borderRadius: '4px' }}>-</button>
               <span style={{ minWidth: 16, textAlign: 'center' }}>{amt}</span>
               <button disabled={!canAdd} onClick={() => adjustAmt(obj, setter, t, 1)} style={{ width: 24, height: 24, padding: 0, borderRadius: '4px' }}>+</button>
@@ -44,7 +44,7 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
   )
 
   const renderOfferStr = (offer_obj) => {
-    const parts = Object.entries(offer_obj).map(([t, c]) => `${c} ${SHARD_ICONS[t]}`)
+    const parts = Object.entries(offer_obj).map(([t, c]) => `${c} ${GEM_ICONS[t]}`)
     return parts.length > 0 ? parts.join(', ') : "Nothing"
   }
 
@@ -57,8 +57,8 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
           <h2>🤝 Player Trade Agreement</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Propose an open trade to all players. (Free Action)</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {renderShardSelectors("You give:", give, setGive, true)}
-            {renderShardSelectors("You ask for:", request, setRequest, false)}
+            {renderGemSelectors("You give:", give, setGive, true)}
+            {renderGemSelectors("You ask for:", request, setRequest, false)}
           </div>
           <div className="modal-actions" style={{ marginTop: '24px' }}>
             <button className="btn btn-outline" onClick={onClose}>Cancel</button>
@@ -96,7 +96,7 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
                 )
               }
               if (resp.status === 'counter') {
-                const canAffordCounter = Object.entries(resp.request).every(([t, c]) => (myPlayer.shards[t] || 0) >= c)
+                const canAffordCounter = Object.entries(resp.request).every(([t, c]) => (myPlayer.gems?.[t] || 0) >= c)
                 return (
                   <div key={pid_str} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(243, 156, 18, 0.1)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--warning)' }}>
                     <div>
@@ -104,7 +104,7 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>They give: {renderOfferStr(resp.give)}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>You give: {renderOfferStr(resp.request)}</div>
                     </div>
-                    <button className="btn btn-small btn-warning" disabled={!canAffordCounter} onClick={() => onAct('trade_player_confirm', { partner_idx: parseInt(pid_str) })}>{canAffordCounter ? 'Confirm' : 'Lack Shards'}</button>
+                    <button className="btn btn-small btn-warning" disabled={!canAffordCounter} onClick={() => onAct('trade_player_confirm', { partner_idx: parseInt(pid_str) })}>{canAffordCounter ? 'Confirm' : 'Lack Gems'}</button>
                   </div>
                 )
               }
@@ -148,8 +148,8 @@ export default function PlayerTradeModal({ state, myPlayer, onAct, onClose }) {
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
               <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>Or Counter Offer:</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {renderShardSelectors("You give:", give, setGive, true)}
-                {renderShardSelectors("You ask for:", request, setRequest, false)}
+                {renderGemSelectors("You give:", give, setGive, true)}
+                {renderGemSelectors("You ask for:", request, setRequest, false)}
               </div>
               <button className="btn btn-warning" style={{ width: '100%', marginTop: '12px' }} disabled={Object.keys(give).length === 0 && Object.keys(request).length === 0} onClick={() => onAct('respond_trade', { status: 'counter', give, request })}>🔄 Send Counter-Offer</button>
             </div>

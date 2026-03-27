@@ -1,6 +1,6 @@
 const SCORE_LABELS = {
   constructs: '🏗️ Constructs', guardian_tokens: '🛡️ Guardian Tokens',
-  explorer_tokens: '🧭 Explorer Tokens', shard_sets: '💎 Shard Sets',
+  explorer_tokens: '🧭 Explorer Tokens', gem_sets: '💎 Gem Sets',
   contracts: '📜 Contracts', most_guardians: '👑 Most Guardians',
   most_explorers: '🗺️ Most Explorers', fracture_bonus: '🌍 World Anchor',
   toll_empire: '🔖 Toll Empire', fracture_penalty: '💀 Fracture Penalty',
@@ -23,8 +23,8 @@ export default function ScoreModal({ state, onNewGame }) {
         <h2 style={{ textAlign: 'center', marginBottom: '8px' }}>🏆 Game Over!</h2>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>
           {state.game_end_trigger === 'fracture' ? '💀 World fractured! All lose 5 VP.'
-            : state.game_end_trigger === 'constructs' ? `${winner?.name} built ${state.constructs_end_count || 7} Constructs!`
-            : 'Rift deck exhausted.'}
+            : state.game_end_trigger === 'constructs' ? `${winner?.name} built ${state.constructs_end_count || 5} Constructs!`
+            : 'Portal deck exhausted.'}
         </p>
 
         <table className="score-table">
@@ -79,10 +79,10 @@ export default function ScoreModal({ state, onNewGame }) {
           <h3 style={{ fontSize: '1rem', marginBottom: '12px', textAlign: 'center', color: 'var(--warning)' }}>🌟 Post-Game Awards</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
             {[
-              { key: 'deep_extracts', icon: '⛏️', title: 'Deep Diver' },
+              { key: 'deep_harvests', icon: '⛏️', title: 'Deep Diver' },
               { key: 'tolls_collected', icon: '💰', title: 'Toll King' },
               { key: 'trades_completed', icon: '🤝', title: 'Master Trader' },
-              { key: 'guardian_tokens', icon: '🛡️', title: 'Rift Guardian' },
+              { key: 'guardian_tokens', icon: '🛡️', title: 'Portal Guardian' },
               { key: 'milestones', icon: '🏆', title: 'Overachiever' },
             ].map(award => {
               let max = 0; let winners = [];

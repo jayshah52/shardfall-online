@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
   
   await hostPage.fill('input[placeholder="Enter your name..."]', 'HostPlayer');
   await hostPage.click('button:has-text("Create Game")');
-  await hostPage.click('button:has-text("Open the Rifts")');
+  await hostPage.click('button:has-text("Open the Portals")');
   
   try {
     await hostPage.waitForSelector('.lobby-code', { timeout: 10000 });
@@ -58,6 +58,7 @@ const { chromium } = require('playwright');
 
   // HOST STARTS
   console.log("[Host] Starting game...");
+  await hostPage.waitForSelector('button:has-text("Start Game")', { timeout: 15000 });
   await hostPage.click('button:has-text("Start Game")');
   
   // ALL CHOOSE SEEKER
@@ -81,6 +82,15 @@ const { chromium } = require('playwright');
 
   // WAIT FOR GAME TO LOAD FOR HOST
   await hostPage.waitForSelector('.game-board');
+  
+  // SKIP TUTORIAL FOR ALL
+  for (const p of pages) {
+    try {
+      await p.click('button:has-text("Skip")', { timeout: 2000 });
+      console.log("Skipped tutorial.");
+    } catch(e) { /* ignore if not shown */ }
+  }
+
   const roundText = await hostPage.locator('.round-badge').innerText();
   console.log(`[Host] Reached Game Board! ${roundText}`);
 
@@ -98,12 +108,12 @@ const { chromium } = require('playwright');
   if (currentTurnIndex !== -1) {
     console.log(`[Player ${currentTurnIndex}] It is my turn! Taking action...`);
     const activePage = pages[currentTurnIndex];
-    // Gather action
-    await activePage.click('button.action-btn:has-text("Gather")');
-    // Click first shard
-    await activePage.click('.shard-token.clickable:first-child');
-    await activePage.click('button:has-text("Take")');
-    console.log(`[Player ${currentTurnIndex}] Gather action successful!`);
+    // Collect action
+    await activePage.click('button.action-btn:has-text("Collect")');
+    // Click first gem
+    await activePage.click('.gem-token.clickable:first-child');
+    await activePage.click('button:has-text("Collect")'); // Confirm button
+    console.log(`[Player ${currentTurnIndex}] Collect action successful!`);
   } else {
     console.log('Error: Could not determine whose turn it is!');
   }
