@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-const GEM_TYPES = ['fire', 'water', 'earth', 'air', 'void']
-const GEM_ICONS = { fire: '🔥', water: '💧', earth: '🌿', air: '⚡', void: '🔮' }
-const GEM_LABELS = { fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', void: 'Void' }
+const GEM_TYPES = ['ember', 'tide', 'verdant', 'storm', 'void']
+const GEM_ICONS = { ember: '🔥', tide: '💧', verdant: '🌿', storm: '⚡', void: '🔮' }
+const GEM_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
 
 export default function TradeModal({ player, tradeRate, onTrade, onClose }) {
   const [giveType, setGiveType] = useState(null)

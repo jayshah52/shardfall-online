@@ -28,18 +28,39 @@ export default function Tutorial({ onClose }) {
   }, [step, cur.target])
 
   const pos = () => {
-    if (!rect || cur.position === 'center') return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-    if (cur.position === 'below') return { top: rect.top + rect.height + 16, left: Math.max(16, Math.min(rect.left, window.innerWidth - 380)) }
-    if (cur.position === 'above') return { bottom: window.innerHeight - rect.top + 16, left: Math.max(16, Math.min(rect.left, window.innerWidth - 380)) }
-    if (cur.position === 'left') return { top: rect.top, right: Math.max(16, window.innerWidth - rect.left + 16) }
-    return {}
+    const w = Math.min(window.innerWidth - 40, 420)
+    const padding = 30
+    const h = 350 // Max expected height (including nav buttons)
+    
+    // Fallback if no rect or step set to center
+    if (!rect || cur.position === 'center' || rect.top < 0) {
+      return { top: '50%', left: '50%', width: w, transform: 'translate(-50%, -50%)', position: 'fixed', zIndex: 10000 }
+    }
+    
+    let left = Math.max(padding, Math.min(rect.left, window.innerWidth - w - padding))
+    let top = 0;
+    
+    if (cur.position === 'below') {
+      top = rect.top + rect.height + 16
+      if (top + h > window.innerHeight) top = rect.top - h - 16
+    } else if (cur.position === 'above') {
+      top = rect.top - h - 16
+      if (top < padding) top = rect.top + rect.height + 16
+    } else {
+      top = rect.top
+    }
+    
+    // Clamp to viewport
+    top = Math.max(padding, Math.min(top, window.innerHeight - h - padding))
+    
+    return { top, left, width: w, position: 'fixed', transform: 'none', zIndex: 10000 }
   }
 
   return (
     <>
       <div className="tutorial-overlay" onClick={onClose} />
-      {rect && <div className="tutorial-spotlight" style={rect} />}
-      <div className="tutorial-tooltip" style={{...pos(), maxWidth: 'calc(100vw - 32px)'}}>
+      {rect && <div className="tutorial-spotlight" style={{...rect, zIndex: 9998}} />}
+      <div className="tutorial-tooltip" style={{...pos(), maxWidth: 'calc(100vw - 32px)', zIndex: 9999}}>
         <h3>{cur.title}</h3>
         <p style={{ whiteSpace: 'pre-line' }}>{cur.body}</p>
         <div className="tutorial-nav">

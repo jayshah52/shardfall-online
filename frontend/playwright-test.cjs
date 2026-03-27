@@ -4,10 +4,11 @@ const { chromium } = require('playwright');
   console.log("Starting Playwright end-to-end test...");
   const browser = await chromium.launch({ headless: true });
   
+  const viewport = { width: 1280, height: 720 };
   const pages = [];
   
   // HOST
-  const hostContext = await browser.newContext();
+  const hostContext = await browser.newContext({ viewport });
   const hostPage = await hostContext.newPage();
   hostPage.on('console', msg => console.log('PAGE LOG:', msg.text()));
   hostPage.on('pageerror', err => console.log('PAGE ERROR:', err.message));
@@ -39,7 +40,7 @@ const { chromium } = require('playwright');
 
   // OTHERS JOIN
   for (let i = 1; i <= 2; i++) {
-    const pContext = await browser.newContext();
+    const pContext = await browser.newContext({ viewport });
     const pPage = await pContext.newPage();
     pages.push(pPage);
     
@@ -83,12 +84,30 @@ const { chromium } = require('playwright');
   // WAIT FOR GAME TO LOAD FOR HOST
   await hostPage.waitForSelector('.game-board');
   
-  // SKIP TUTORIAL FOR ALL
-  for (const p of pages) {
+  // WALK THROUGH TUTORIAL FOR ALL
+  console.log("[All] Walking through tutorial...");
+  for (const [idx, p] of pages.entries()) {
     try {
-      await p.click('button:has-text("Skip")', { timeout: 2000 });
-      console.log("Skipped tutorial.");
-    } catch(e) { /* ignore if not shown */ }
+      await p.waitForSelector('.tutorial-tooltip', { state: 'visible', timeout: 15000 });
+      await p.waitForTimeout(1000);
+      
+      // 14 "Next" clicks
+      for (let s = 0; s < 14; s++) {
+        const next = p.locator('button.btn-primary');
+        await next.waitFor({ state: 'visible', timeout: 5000 });
+        await next.click();
+        await p.waitForTimeout(400); 
+      }
+      // 1 "Got It" click
+      const gotIt = p.locator('button.btn-success');
+      await gotIt.waitFor({ state: 'visible', timeout: 5000 });
+      await gotIt.click();
+      await p.waitForSelector('.tutorial-overlay', { state: 'hidden', timeout: 5000 });
+      console.log(`[Player ${idx}] Completed tutorial.`);
+    } catch(e) {
+      await p.screenshot({ path: `fail-tutorial-p${idx}.png` });
+      console.log(`[Player ${idx}] Tutorial walkthrough interrupted: ${e.message}`);
+    }
   }
 
   const roundText = await hostPage.locator('.round-badge').innerText();

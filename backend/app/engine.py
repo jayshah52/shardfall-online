@@ -583,13 +583,13 @@ class ShardFallEngine:
         discount = 1 if self._player_has_ability(player, "extract_discount") else 0
         total_cost = max(0, base_cost + sensitivity - discount)
 
-        # Fire Seeker extra power: pay 1 extra stability for +3 gems
-        is_fire_seeker_bonus = (
-            self._player_seeker_power(player) == "fire_extract_bonus" 
-            and portal["type"] == "fire"
+        # Ember Seeker extra power: pay 1 extra stability for +3 gems
+        is_ember_seeker_bonus = (
+            self._player_seeker_power(player) == "ember_extract_bonus" 
+            and portal["type"] == "ember"
             and portal["stability"] >= total_cost + 1
         )
-        if is_fire_seeker_bonus:
+        if is_ember_seeker_bonus:
             total_cost += 1
 
         # Block harvest if portal doesn't have enough stability
@@ -601,7 +601,7 @@ class ShardFallEngine:
 
         # Gems gained
         base_gems = 4 if deep else 2
-        bonus = 3 if is_fire_seeker_bonus else 0
+        bonus = 3 if is_ember_seeker_bonus else 0
 
         gems_gained = base_gems + bonus
         gained = []
@@ -628,12 +628,12 @@ class ShardFallEngine:
         # Track for contracts (using legacy names for telemetry/contracts)
         self.extracts_this_turn += 1
         if deep:
-            player["deep_extracts"] += 1
+            player["deep_harvests"] += 1
         rt = portal["type"]
-        if rt not in player["rift_extracts"]:
-            player["rift_extracts"][rt] = []
-        if portal["id"] not in player["rift_extracts"][rt]:
-            player["rift_extracts"][rt].append(portal["id"])
+        if rt not in player["portal_harvests"]:
+            player["portal_harvests"][rt] = []
+        if portal["id"] not in player["portal_harvests"][rt]:
+            player["portal_harvests"][rt].append(portal["id"])
 
         mode = "Deep" if deep else "Safe"
         self._log("action",
@@ -1012,11 +1012,11 @@ class ShardFallEngine:
         if cid == "trader":
             return player["trades_completed"] >= 6
         if cid == "ember_lord":
-            return len(player["portal_extracts"].get("ember", [])) >= 3
+            return len(player["portal_harvests"].get("ember", [])) >= 3
         if cid == "tide_lord":
-            return len(player["portal_extracts"].get("tide", [])) >= 3
+            return len(player["portal_harvests"].get("tide", [])) >= 3
         if cid == "daredevil":
-            return player["deep_extracts"] >= 3
+            return player["deep_harvests"] >= 3
         if cid == "fortress_contract":
             return sum(1 for c in player["constructs"] if c.get("ability")) >= 3
         if cid == "world_saver":

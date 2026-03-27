@@ -17,16 +17,16 @@
   --text-muted: #5a6a7a;
 
   /* Gem colors */
-  --fire: #e74c3c;
-  --fire-glow: rgba(231,76,60,0.3);
-  --water: #3498db;
-  --water-glow: rgba(52,152,219,0.3);
-  --earth: #27ae60;
-  --earth-glow: rgba(39,174,96,0.3);
-  --air: #f1c40f;
-  --air-glow: rgba(241,196,15,0.3);
-  --void: #9b59b6;
-  --void-glow: rgba(155,89,182,0.3);
+  --ember: #ff8a65;
+  --ember-glow: rgba(255,138,101,0.15);
+  --tide: #4fc3f7;
+  --tide-glow: rgba(79,195,247,0.15);
+  --verdant: #81c784;
+  --verdant-glow: rgba(129,199,132,0.15);
+  --storm: #ba68c8;
+  --storm-glow: rgba(186,104,200,0.15);
+  --void: #e0e0e0;
+  --void-glow: rgba(224,224,224,0.15);
 
   /* UI accents */
   --accent: #4fc3f7;
@@ -685,10 +685,10 @@ body {
   pointer-events: none;
 }
 
-.portal-card[data-type="fire"] { border-top: 4px solid var(--fire); background: linear-gradient(155deg, rgba(239, 83, 80, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
-.portal-card[data-type="water"] { border-top: 4px solid var(--water); background: linear-gradient(155deg, rgba(41, 182, 246, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
-.portal-card[data-type="earth"] { border-top: 4px solid var(--earth); background: linear-gradient(155deg, rgba(102, 187, 106, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
-.portal-card[data-type="air"] { border-top: 4px solid var(--air); background: linear-gradient(155deg, rgba(171, 71, 188, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.portal-card[data-type="ember"] { border-top: 4px solid var(--ember); background: linear-gradient(155deg, rgba(255, 138, 101, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.portal-card[data-type="tide"] { border-top: 4px solid var(--tide); background: linear-gradient(155deg, rgba(79, 195, 247, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.portal-card[data-type="verdant"] { border-top: 4px solid var(--verdant); background: linear-gradient(155deg, rgba(129, 199, 132, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
+.portal-card[data-type="storm"] { border-top: 4px solid var(--storm); background: linear-gradient(155deg, rgba(186, 104, 200, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
 .portal-card[data-type="void"] { border-top: 4px solid var(--void); background: linear-gradient(155deg, rgba(158, 158, 158, 0.1) 0%, rgba(15, 15, 20, 0.95) 100%); }
 
 .portal-card.clickable { cursor: pointer; }
@@ -1371,7 +1371,6 @@ body {
   border: 1px solid var(--accent);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  max-width: 380px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   z-index: 5002;

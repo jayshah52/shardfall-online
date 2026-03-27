@@ -5,10 +5,10 @@ import TradeModal from './TradeModal'
 import ScoreModal from './ScoreModal'
 import PlayerTradeModal from './PlayerTradeModal'
 
-const GEM_ICONS = { fire: '🔥', water: '💧', earth: '🌿', air: '⚡', void: '🔮' }
-const GEM_LABELS = { fire: 'Fire', water: 'Water', earth: 'Earth', air: 'Air', void: 'Void' }
-const PORTAL_ICONS = { fire: '🌋', water: '🌊', earth: '🌲', air: '⛈️', void: '💎' }
-const GEM_TYPES = ['fire', 'water', 'earth', 'air', 'void']
+const GEM_ICONS = { ember: '🔥', tide: '💧', verdant: '🌿', storm: '⚡', void: '🔮' }
+const GEM_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
+const PORTAL_ICONS = { ember: '🌋', tide: '🌊', verdant: '🌲', storm: '⛈️', void: '💎' }
+const GEM_TYPES = ['ember', 'tide', 'verdant', 'storm', 'void']
 
 export default function Game({ initialState, roomCode, playerId, myIndex, onLeave }) {
   const [state, setState] = useState(initialState)
@@ -335,13 +335,14 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
             💎 Gem Market
             {selectedAction === 'collect' && <span className="helper-text">— Select {Math.min(gatherCount, state.gem_market?.length || 0)} gem(s), then confirm</span>}
           </div>
-          <div className="gem-market">
+          <div className="shard-market">
             {(state.gem_market || []).map((gem, i) => (
-              <div key={i}
-                className={`gem-token ${selectedAction === 'collect' && isMyTurn ? 'clickable' : ''} ${selectedGems.includes(i) ? 'selected' : ''}`}
-                data-type={gem} onClick={() => handleMarketClick(i)} title={GEM_LABELS[gem]}>
+              <button key={i}
+                className={`shard-token ${selectedAction === 'collect' && isMyTurn ? 'clickable' : ''} ${selectedGems.includes(i) ? 'selected' : ''}`}
+                data-type={gem} onClick={() => handleMarketClick(i)} title={GEM_LABELS[gem]}
+                disabled={selectedAction !== 'collect' || !isMyTurn}>
                 {GEM_ICONS[gem]}
-              </div>
+              </button>
             ))}
             {selectedAction === 'collect' && selectedGems.length > 0 && (
               <button className="btn btn-small btn-success" onClick={confirmCollect}>
