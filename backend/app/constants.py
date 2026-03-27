@@ -8,7 +8,7 @@ SHARD_TYPES = GEM_TYPES # Alias for transition
 
 GEM_COLORS = {
     "ember": "#ff8a65", "tide": "#4fc3f7", "verdant": "#81c784",
-    "storm": "#ba68c8", "void": "#e0e0e0",
+    "storm": "#f1c40f", "void": "#9b59b6",
 }
 SHARD_COLORS = GEM_COLORS
 
@@ -19,7 +19,7 @@ SHARD_ICONS = GEM_ICONS
 
 HAND_LIMIT = 10
 
-# 20 Portal Cards: 4 per type with stabilities 2, 3, 3, 4
+# 20 Portal Cards: 4 per type with stabilities [2, 3, 3, 4]
 PORTAL_CARDS = []
 _portal_id = 0
 for _stype in SHARD_TYPES:
@@ -133,10 +133,10 @@ SEEKER_CARDS = [
      "color": "#81c784", "power": "trade_discount",
      "description": "Bank trades cost 2:1 instead of 3:1"},
     {"id": "storm_seeker", "name": "Storm Seeker", "icon": "⚡",
-     "color": "#ba68c8", "power": "extra_action",
+     "color": "#f1c40f", "power": "extra_action",
      "description": "Take 3 actions per turn (max 1 Harvest)"},
-    {"id": "void_seeker", "name": "Void Seeker", "icon": "🔮",
-     "color": "#e0e0e0", "power": "build_discount",
+    {"id": "void_seeker", "name": "Void Seeker", "icon": "🌐",
+     "color": "#9b59b6", "power": "build_discount",
      "description": "Constructs cost 1 fewer Gem (cheapest removed)"},
     {"id": "wanderer", "name": "Wanderer", "icon": "🧭",
      "color": "#1abc9c", "power": "double_explore",

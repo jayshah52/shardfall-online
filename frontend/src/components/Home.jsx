@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createRoom, joinRoom } from '../api'
+import Rulebook from './Rulebook'
 
 export default function Home({ onRoomJoined }) {
   const [mode, setMode] = useState('menu') // menu, create, join
@@ -8,6 +9,7 @@ export default function Home({ onRoomJoined }) {
   const [joinCode, setJoinCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showRulebook, setShowRulebook] = useState(false)
 
   const [gameMode, setGameMode] = useState('normal') // normal or fast
 
@@ -78,8 +80,13 @@ export default function Home({ onRoomJoined }) {
           <p className="home-footer">
             V2: Portal Claims & Tolls · Contracts · Hand Limit · Tier Gating
           </p>
+          <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+            <button className="btn btn-outline btn-full btn-rulebook" onClick={() => setShowRulebook(true)}>📖 View Rulebook</button>
+          </div>
         </div>
       )}
+
+      {showRulebook && <Rulebook onClose={() => setShowRulebook(false)} />}
 
       {mode === 'create' && (
         <div className="landing-form">
