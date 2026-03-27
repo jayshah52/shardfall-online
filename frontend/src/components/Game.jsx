@@ -4,10 +4,11 @@ import Tutorial from './Tutorial'
 import TradeModal from './TradeModal'
 import ScoreModal from './ScoreModal'
 import PlayerTradeModal from './PlayerTradeModal'
+import Rulebook from './Rulebook'
 
-const GEM_ICONS = { ember: '🔥', tide: '💧', verdant: '🌿', storm: '⚡', void: '🔮' }
+const GEM_ICONS = { ember: '🔥', tide: '💧', verdant: '🌿', storm: '⚡', void: '🌐' }
 const GEM_LABELS = { ember: 'Ember', tide: 'Tide', verdant: 'Verdant', storm: 'Storm', void: 'Void' }
-const PORTAL_ICONS = { ember: '🌋', tide: '🌊', verdant: '🌲', storm: '⛈️', void: '💎' }
+const PORTAL_ICONS = { ember: '🌋', tide: '🌊', verdant: '🌲', storm: '⛈️', void: '🌐' }
 const GEM_TYPES = ['ember', 'tide', 'verdant', 'storm', 'void']
 
 export default function Game({ initialState, roomCode, playerId, myIndex, onLeave }) {
@@ -21,10 +22,14 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const [convertFrom, setConvertFrom] = useState(null)
   const [convertTo, setConvertTo] = useState(null)
   const [showTutorial, setShowTutorial] = useState(true)
+  const [showScore, setShowScore] = useState(true)
+  const [latestAnomaly, setLatestAnomaly] = useState(null)
+  const [turnPulse, setTurnPulse] = useState(false)
   const [error, setError] = useState(null)
   const [viewingPlayer, setViewingPlayer] = useState(myIndex)
   const [animatingPortals, setAnimatingPortals] = useState(new Set())
   const [showContracts, setShowContracts] = useState(false)
+  const [showRulebook, setShowRulebook] = useState(false)
   const logRef = useRef(null)
 
   const isMyTurn = state.current_player === myIndex
@@ -225,14 +230,15 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
           <div className="fracture-track" id="fracture-track">
             <span className="fracture-track-label">Fracture</span>
             <div className="fracture-track-bar">
-              {Array.from({ length: state.fracture_threshold }, (_, i) => (
-                <div key={i} className={`fracture-segment ${i < state.fracture ? 'filled' : ''} ${i < state.fracture && state.fracture >= state.fracture_threshold - 2 ? 'high' : 'low'}`} />
+              {Array.from({ length: state.fracture_threshold || 4 }, (_, i) => (
+                <div key={i} className={`fracture-segment ${i < state.fracture ? 'filled' : ''} ${i < state.fracture && state.fracture >= (state.fracture_threshold || 4) - 2 ? 'high' : 'low'}`} />
               ))}
             </div>
-            <span className="fracture-number" style={{ color: state.fracture >= state.fracture_threshold - 2 ? 'var(--danger)' : 'var(--text-secondary)' }}>
-              {state.fracture}/{state.fracture_threshold}
+            <span className="fracture-number" style={{ color: state.fracture >= (state.fracture_threshold || 4) - 2 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+              {state.fracture}/{state.fracture_threshold || 4}
             </span>
           </div>
+          <button className="btn btn-small btn-outline" onClick={() => setShowRulebook(true)} title="Rulebook" style={{ marginRight: '8px' }}>📖</button>
           <button className="btn btn-small btn-outline" onClick={() => setShowTutorial(true)} title="Tutorial">❓</button>
         </div>
       </header>
@@ -633,8 +639,29 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
         </div>
       )}
 
-      {isGameOver && <ScoreModal state={state} onNewGame={onLeave} />}
+      {isGameOver && showScore && <ScoreModal state={state} onNewGame={onLeave} onClose={() => setShowScore(false)} />}
+      {!isGameOver && !showScore && <div className="game-over-badge" onClick={() => setShowScore(true)}>🏆 View Results</div>}
       {showTutorial && !isGameOver && <Tutorial onClose={() => setShowTutorial(false)} />}
+      {showRulebook && <Rulebook onClose={() => setShowRulebook(false)} />}
+      
+      {/* Anomaly Animation Overlay */}
+      {latestAnomaly && (
+        <div className="anomaly-overlay animate-fade-in">
+          <div className="anomaly-content animate-pop-in">
+            <div className="anomaly-title">⚡ ANOMALY DETECTED</div>
+            <div className="anomaly-name">{latestAnomaly.name}</div>
+            <div className="anomaly-desc">{latestAnomaly.description}</div>
+            <div className="anomaly-timer" />
+          </div>
+        </div>
+      )}
+
+      {/* Turn Notification */}
+      {turnPulse && isMyTurn && (
+        <div className="turn-notification animate-slide-up">
+          🎯 YOUR TURN
+        </div>
+      )}
     </div>
   )
 }

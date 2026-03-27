@@ -7,7 +7,7 @@ const SCORE_LABELS = {
   last_collapse: '💥 Last Collapse',
 }
 
-export default function ScoreModal({ state, onNewGame }) {
+export default function ScoreModal({ state, onNewGame, onClose }) {
   const players = state.players.filter(p => p.score)
   const sorted = [...players].sort((a, b) => b.score.total - a.score.total)
   const winner = sorted[0]
@@ -105,7 +105,8 @@ export default function ScoreModal({ state, onNewGame }) {
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+        <div style={{ textAlign: 'center', marginTop: '16px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button className="btn btn-outline" onClick={onClose}>🇽 Close & Review Board</button>
           <button className="btn btn-primary" onClick={onNewGame}>🔄 New Game</button>
         </div>
       </div>

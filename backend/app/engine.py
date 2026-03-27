@@ -53,11 +53,25 @@ class ShardFallEngine:
                 "milestones": [], # New! Track achievements
             })
 
-        # Portal deck — ALL shuffled together (anomalies throughout)
-        portal_cards = [dict(c) for c in PORTAL_CARDS]
-        anomaly_cards = [{"is_anomaly": True, **a} for a in ANOMALY_CARDS]
-        self.portal_deck = portal_cards + anomaly_cards
-        random.shuffle(self.portal_deck)
+        # Portal deck — Balanced Shuffle (2 Acts: each act has 2 of each gem type + 4 anomalies)
+        # 5 types * 4 cards = 20 portals. 8 anomalies / 2 acts = 4 anomalies.
+        # Total per act: 10 + 4 = 14 cards. (2 * 14 = 28 cards total)
+        p_by_type = {t: [dict(c) for c in PORTAL_CARDS if c["type"] == t] for t in GEM_TYPES}
+        anoms = [{"is_anomaly": True, **a} for a in ANOMALY_CARDS]
+        random.shuffle(anoms)
+        
+        self.portal_deck = []
+        for i in range(2):
+            act = []
+            for t in GEM_TYPES:
+                for _ in range(2): # 2 of each type in each act
+                    if p_by_type[t]:
+                        act.append(p_by_type[t].pop(random.randint(0, len(p_by_type[t])-1)))
+            for _ in range(4): # 4 anomalies per act
+                if anoms:
+                    act.append(anoms.pop(0))
+            random.shuffle(act)
+            self.portal_deck.extend(act)
 
         self.active_portals = []
         self.supply = {t: 16 for t in GEM_TYPES}
@@ -189,6 +203,7 @@ class ShardFallEngine:
         card = self.portal_deck.pop(0)
         if card.get("is_anomaly"):
             if not silent:
+                self.latest_anomaly = card
                 self._log("anomaly", f"⚡ ANOMALY: {card['name']} — {card['description']}", card)
                 self._resolve_anomaly(card)
             return self._reveal_portal(silent)
@@ -357,13 +372,21 @@ class ShardFallEngine:
         return sum(1 for c in player["constructs"] if c["tier"] == tier)
 
     def _can_build_tier(self, player, tier):
+        smalls = [c for c in player["constructs"] if c["tier"] == "small"]
+        mediums = [c for c in player["constructs"] if c["tier"] == "medium"]
+        larges = [c for c in player["constructs"] if c["tier"] == "large"]
+        count = len(player["constructs"])
+        
+        # Enforce rule: To finish (at end_count-1), if no large, can only build large
+        if count >= self.constructs_end_count - 1 and len(larges) == 0 and tier != "large":
+            return False
+
         if tier == "small":
             return True
         if tier == "medium":
-            return self._count_constructs_by_tier(player, "small") >= 2
+            return len(smalls) >= 2 # Back to 2 Small for Medium
         if tier == "large":
-            return (self._count_constructs_by_tier(player, "small") >= 2 and
-                    self._count_constructs_by_tier(player, "medium") >= 1)
+            return len(smalls) >= 2 and len(mediums) >= 1
         return False
 
     def _check_hand_limit(self, player):
@@ -437,6 +460,8 @@ class ShardFallEngine:
         
         if self.phase != "playing":
             return {"error": f"Cannot act in phase: {self.phase}"}
+
+        self.latest_anomaly = None # Clear previous anomaly
 
         is_free_action = action in ["convert", "trade_player_offer", "trade_player_cancel", "trade_player_confirm"]
 
@@ -641,7 +666,7 @@ class ShardFallEngine:
         mode = "Deep" if deep else "Safe"
         self._log("action",
             f"⛏️ {player['name']} {mode} Harvested {gems_gained} {GEM_ICONS[portal['type']]} "
-            f"(Stability: {portal['stability']}/{portal['max_stability']})")
+            f"(Cost: −{total_cost} Stability, Current: {portal['stability']}/{portal['max_stability']})")
 
         # Push-Your-Luck Portal Surges (20% chance)
         if random.random() < 0.20:
@@ -984,10 +1009,11 @@ class ShardFallEngine:
             self._calculate_scores()
             return True
         for p in self.players:
-            if len(p["constructs"]) >= self.constructs_end_count:
+            has_large = any(c["tier"] == "large" for c in p["constructs"])
+            if len(p["constructs"]) >= self.constructs_end_count and has_large:
                 self.phase = "game_over"
                 self.game_end_trigger = "constructs"
-                self._log("info", f"🏆 {p['name']} built {self.constructs_end_count} Constructs! Game ends!")
+                self._log("info", f"🏆 {p['name']} built {len(p['constructs'])} Constructs (including a Large structure)! Game ends!")
                 self._calculate_scores()
                 return True
         if not self.portal_deck and self.actions_remaining <= 0:
@@ -1092,6 +1118,19 @@ class ShardFallEngine:
                 toll_bonus = p["tolls_collected"]
                 score["breakdown"]["toll_empire"] = toll_bonus
                 score["total"] += toll_bonus
+
+            # Milestones
+            mvp = 0
+            for m in p["milestones"]:
+                if m == "pioneer": mvp += 3
+                elif m == "foundation": mvp += 1
+                elif m == "daredevil": mvp += 2
+                elif m == "diplomat": mvp += 1
+                elif m == "toll_baron": mvp += 2
+                elif m == "architect": mvp += 1
+                elif m == "titan": mvp += 2
+            score["breakdown"]["milestones"] = mvp
+            score["total"] += mvp
 
             # Fracture penalty
             if self.game_end_trigger == "fracture":
