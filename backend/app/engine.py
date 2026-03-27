@@ -210,13 +210,13 @@ class ShardFallEngine:
         if aid == "dimensional_surge":
             for portal in self.active_portals:
                 portal["stability"] = max(0, portal["stability"] - 1)
-        elif aid == "shard_rain":
+        elif aid == "gem_rain":
             for p in self.players:
                 for _ in range(2):
-                    s = self._draw_shard_from_supply()
+                    s = self._draw_gem_from_supply()
                     if s:
-                        p["shards"][s] += 1
-            self._log("info", "🎁 All players received 2 random Shards!")
+                        p["gems"][s] += 1
+            self._log("info", "🎁 All players received 2 random Gems!")
         elif aid == "reality_shift":
             for c in self.construct_display:
                 self.construct_deck.append(c)
@@ -236,30 +236,30 @@ class ShardFallEngine:
         elif aid == "convergence":
             contributors = 0
             for p in self.players:
-                total = sum(p["shards"].values())
+                total = sum(p["gems"].values())
                 if total >= 2:
                     # Auto-contribute: remove 2 most abundant
                     removed = 0
-                    for t in sorted(SHARD_TYPES, key=lambda x: p["shards"][x], reverse=True):
-                        while removed < 2 and p["shards"][t] > 0:
-                            p["shards"][t] -= 1
-                            self._return_shard_to_supply(t)
+                    for t in sorted(GEM_TYPES, key=lambda x: p["gems"][x], reverse=True):
+                        while removed < 2 and p["gems"][t] > 0:
+                            p["gems"][t] -= 1
+                            self._return_gem_to_supply(t)
                             removed += 1
                     p["guardian_tokens"] += 1
                     contributors += 1
             self.fracture = max(0, self.fracture - contributors)
             self._log("info", f"🤝 Convergence: {contributors} player(s) contributed! Fracture −{contributors}")
         elif aid == "market_surge":
-            while len(self.shard_market) < 6:
-                s = self._draw_shard_from_supply()
+            while len(self.gem_market) < 6:
+                s = self._draw_gem_from_supply()
                 if s is None:
                     break
-                self.shard_market.append(s)
+                self.gem_market.append(s)
             for p in self.players:
-                s = self._draw_shard_from_supply()
+                s = self._draw_gem_from_supply()
                 if s:
-                    p["shards"][s] += 1
-            self._log("info", "🎭 Market Surge! Market expanded, each player got 1 free shard!")
+                    p["gems"][s] += 1
+            self._log("info", "🎭 Market Surge! Market expanded, each player got 1 free gem!")
         elif aid == "rift_merge":
             if len(self.active_portals) >= 2:
                 sorted_portals = sorted(self.active_portals, key=lambda r: r["stability"])
@@ -283,17 +283,17 @@ class ShardFallEngine:
             self._log("danger", f"💥 {portal['type'].title()} Portal COLLAPSED! Fracture +1")
             self.last_collapse_player = self.current_player
 
-        # Backlash: all players lose 1 shard of that type
+        # Backlash: all players lose 1 gem of that type
         for p in self.players:
             if self._player_seeker_power(p) == "collapse_bonus" and p["index"] == self.current_player:
                 # Sentinel is immune to backlash during their own collapse event
                 continue
             if self._player_seeker_power(p) == "no_backlash": # Legacy check
                 continue
-            if p["shards"].get(portal["type"], 0) > 0:
-                p["shards"][portal["type"]] -= 1
-                self._return_shard_to_supply(portal["type"])
-                self._log("danger", f"⚡ {p['name']} lost 1 {SHARD_ICONS[portal['type']]} (backlash)")
+            if p["gems"].get(portal["type"], 0) > 0:
+                p["gems"][portal["type"]] -= 1
+                self._return_gem_to_supply(portal["type"])
+                self._log("danger", f"⚡ {p['name']} lost 1 {GEM_ICONS[portal['type']]} (backlash)")
 
         self.active_portals.remove(portal)
         self.portal_claims.pop(str(portal["id"]), None)
@@ -324,8 +324,8 @@ class ShardFallEngine:
             return HAND_LIMIT + 2
         return HAND_LIMIT
 
-    def _get_total_shards(self, player):
-        return sum(player["shards"].values())
+    def _get_total_gems(self, player):
+        return sum(player["gems"].values())
 
     def _get_portal_sensitivity(self, player):
         n = len(player["constructs"])
@@ -368,7 +368,7 @@ class ShardFallEngine:
 
     def _check_hand_limit(self, player):
         limit = self._get_hand_limit(player)
-        total = self._get_total_shards(player)
+        total = self._get_total_gems(player)
         if total > limit:
             self.discard_required = total - limit
             return True
@@ -432,7 +432,7 @@ class ShardFallEngine:
 
         if self.phase == "discard":
             if action != "discard":
-                return {"error": "Must discard shards first (hand limit exceeded)"}
+                return {"error": "Must discard gems first (hand limit exceeded)"}
             return self._action_discard(player, params)
         
         if self.phase != "playing":
@@ -637,16 +637,16 @@ class ShardFallEngine:
 
         mode = "Deep" if deep else "Safe"
         self._log("action",
-            f"⛏️ {player['name']} {mode} Harvested {gems_gained} {SHARD_ICONS[portal['type']]} "
+            f"⛏️ {player['name']} {mode} Harvested {gems_gained} {GEM_ICONS[portal['type']]} "
             f"(Stability: {portal['stability']}/{portal['max_stability']})")
 
         # Push-Your-Luck Portal Surges (20% chance)
         if random.random() < 0.20:
             surge = random.choice(["bonus", "instability", "echo", "jackpot"])
             if surge == "bonus":
-                s = self._draw_shard_from_supply()
+                s = self._draw_gem_from_supply()
                 if s:
-                    player["shards"][s] += 1
+                    player["gems"][s] += 1
                     self._log("info", f"✨ PORTAL SURGE! {player['name']} finds a hidden {s.title()} gem!")
             elif surge == "instability":
                 portal["stability"] = max(0, portal["stability"] - 1)
@@ -658,19 +658,19 @@ class ShardFallEngine:
                 self._log("info", f"🌀 PORTAL SURGE! An echo stabilizes the {portal['type'].title()} Portal (+1)!")
             elif surge == "jackpot":
                 for _ in range(2):
-                    s = self._draw_shard_from_supply()
+                    s = self._draw_gem_from_supply()
                     if s:
-                        player["shards"][s] += 1
+                        player["gems"][s] += 1
                 self._log("info", f"💰 JACKPOT SURGE! {player['name']} strikes a rich deposit (+2 gems)!")
 
         # Sentinel bonus: if portal collapsed during extraction, gain extra random gems
         if portal["stability"] <= 0 and self._player_seeker_power(player) == "collapse_bonus":
             g_extra = []
             for _ in range(2):
-                s = self._draw_shard_from_supply()
+                s = self._draw_gem_from_supply()
                 if s:
-                    player["shards"][s] += 1
-                    g_extra.append(SHARD_ICONS[s])
+                    player["gems"][s] += 1
+                    g_extra.append(GEM_ICONS[s])
             if g_extra:
                 self._log("info", f"🛡️ Sentinel scavenges {' '.join(g_extra)} from the collapse!")
 
