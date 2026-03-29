@@ -53,6 +53,8 @@ class ShardFallEngine:
                 "portal_harvests": {},  # type -> set of portal IDs harvested from
                 "deep_harvests": 0,
                 "milestones": [], # New! Track achievements
+                "milestone_vp": 0,
+                "backlash_vp_penalty": 0,
             })
 
         # Portal deck — Balanced Shuffle (2 Acts: each act has 2 of each gem type + 4 anomalies)
@@ -320,6 +322,12 @@ class ShardFallEngine:
 
         self.active_portals.remove(portal)
         self.portal_claims.pop(str(portal["id"]), None)
+        
+        # Persistent VP Penalty for the player who caused it
+        culprit = self.players[self.last_collapse_player]
+        culprit["backlash_vp_penalty"] -= 2
+        self._log("danger", f"💀 Backlash Alert: {culprit['name']} loses 2 VP for the collapse!")
+        
         self.fracture += 1
 
     def _log(self, log_type, message, data=None):
@@ -1128,17 +1136,12 @@ class ShardFallEngine:
                 score["total"] += toll_bonus
 
             # Milestones
-            mvp = 0
-            for m in p["milestones"]:
-                if m == "pioneer": mvp += 3
-                elif m == "foundation": mvp += 1
-                elif m == "daredevil": mvp += 2
-                elif m == "diplomat": mvp += 1
-                elif m == "toll_baron": mvp += 2
-                elif m == "architect": mvp += 1
-                elif m == "titan": mvp += 2
-            score["breakdown"]["milestones"] = mvp
-            score["total"] += mvp
+            score["breakdown"]["milestones"] = p["milestone_vp"]
+            score["total"] += p["milestone_vp"]
+            
+            # Persistent Backlash Penalties
+            score["breakdown"]["backlash_penalty"] = p["backlash_vp_penalty"]
+            score["total"] += p["backlash_vp_penalty"]
 
             # Fracture penalty
             if self.game_end_trigger == "fracture":
@@ -1261,7 +1264,7 @@ class ShardFallEngine:
                 # First only? Let's check if anyone else has it
                 if not any("pioneer" in op["milestones"] for op in self.players):
                     m.append("pioneer")
-                    p["score"] = p.get("score", 0) + 3
+                    p["milestone_vp"] += 3
                     self._log("info", f"🏆 MILESTONE! {p['name']} is the FIRST to discover all 5 elements! (+3 VP)")
             
             # 2. Foundation (2nd Small Construct)
@@ -1269,39 +1272,39 @@ class ShardFallEngine:
                 smalls = [c for c in p["constructs"] if c["tier"] == "small"]
                 if len(smalls) >= 2:
                     m.append("foundation")
-                    p["score"] = p.get("score", 0) + 1
+                    p["milestone_vp"] += 1
                     self._log("info", f"🏆 MILESTONE! {p['name']} built their 2nd Small Construct: Foundation laid! (+1 VP)")
 
             # 3. Daredevil (3 Deep Harvests)
             if "daredevil" not in m and p["deep_harvests"] >= 3:
                 m.append("daredevil")
-                p["score"] = p.get("score", 0) + 2
+                p["milestone_vp"] += 2
                 self._log("info", f"🏆 MILESTONE! {p['name']} performed 3 Deep Harvests: Daredevil! (+2 VP)")
 
             # 4. Diplomat (3 Trades)
             if "diplomat" not in m and p["trades_completed"] >= 3:
                 m.append("diplomat")
-                p["score"] = p.get("score", 0) + 1
+                p["milestone_vp"] += 1
                 self._log("info", f"🏆 MILESTONE! {p['name']} completed 3 Trades: Diplomat! (+1 VP)")
 
             # 5. Toll Baron (3 Tolls)
             if "toll_baron" not in m and p["tolls_collected"] >= 3:
                 if not any("toll_baron" in op["milestones"] for op in self.players):
                     m.append("toll_baron")
-                    p["score"] = p.get("score", 0) + 2
+                    p["milestone_vp"] += 2
                     self._log("info", f"🏆 MILESTONE! {p['name']} is the FIRST to collect 3 Tolls: Toll Baron! (+2 VP)")
 
             # 6. Architect (1st Medium)
             if "architect" not in m and any(c["tier"] == "medium" for c in p["constructs"]):
                 m.append("architect")
-                p["score"] = p.get("score", 0) + 1
+                p["milestone_vp"] += 1
                 self._log("info", f"🏆 MILESTONE! {p['name']} built their first Medium Construct: Architect! (+1 VP)")
 
             # 7. Titan (1st Large)
             if "titan" not in m and any(c["tier"] == "large" for c in p["constructs"]):
                 if not any("titan" in op["milestones"] for op in self.players):
                     m.append("titan")
-                    p["score"] = p.get("score", 0) + 2
+                    p["milestone_vp"] += 2
                     self._log("info", f"🏆 MILESTONE! {p['name']} is the FIRST to build a Large Construct: TITAN! (+2 VP)")
 
     def get_state(self):

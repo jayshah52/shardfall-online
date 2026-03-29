@@ -26,6 +26,8 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const [latestAnomaly, setLatestAnomaly] = useState(null)
   const [showTurnModal, setShowTurnModal] = useState(false)
   const [error, setError] = useState(null)
+  const lastShownAnomalyId = useRef(null)
+  const lastShownTurnPlayerId = useRef(null)
   const [viewingPlayer, setViewingPlayer] = useState(myIndex)
   const [animatingPortals, setAnimatingPortals] = useState(new Set())
   const [showContracts, setShowContracts] = useState(false)
@@ -40,6 +42,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const isDiscard = state.phase === 'discard'
   const isGameOver = state.phase === 'game_over'
   const isMyDiscard = isDiscard && isMyTurn
+  const isMobile = window.innerWidth <= 768
 
   const handLimit = myPlayer?.seeker?.power === 'hand_limit_up' ? 12 : (state.hand_limit || 10)
   const myTotalGems = myPlayer ? Object.values(myPlayer.gems || {}).reduce((a, b) => a + b, 0) : 0
@@ -111,24 +114,37 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
 
   // Trigger animations for turn and anomalies
   useEffect(() => {
-    if (state.latest_anomaly && (!latestAnomaly || state.latest_anomaly.instance_id !== latestAnomaly.instance_id)) {
+    if (state.latest_anomaly && state.latest_anomaly.instance_id !== lastShownAnomalyId.current) {
       setLatestAnomaly(state.latest_anomaly)
-      // Auto-close after 6s (increased for drama)
+      lastShownAnomalyId.current = state.latest_anomaly.instance_id
+    } else if (!state.latest_anomaly) {
+      setLatestAnomaly(null)
+      lastShownAnomalyId.current = null
+    }
+  }, [state.latest_anomaly?.instance_id])
+
+  // Separate dismissal timer that won't be reset by polling
+  useEffect(() => {
+    if (latestAnomaly) {
       const timer = setTimeout(() => setLatestAnomaly(null), 6000)
       return () => clearTimeout(timer)
     }
-  }, [state.latest_anomaly])
+  }, [latestAnomaly?.instance_id])
 
   useEffect(() => {
-    if (isMyTurn && state.actions_remaining === 2 && !showTurnModal) {
+    const maxActions = myPlayer?.seeker?.power === 'extra_action' ? 3 : 2
+    const turnKey = `${state.round}_${state.current_player}`
+    
+    if (isMyTurn && state.actions_remaining === maxActions && turnKey !== lastShownTurnPlayerId.current) {
       setShowTurnModal(true)
+      lastShownTurnPlayerId.current = turnKey
       // Auto-close after 3s
       const timer = setTimeout(() => setShowTurnModal(false), 3000)
       return () => clearTimeout(timer)
     } else if (!isMyTurn) {
       setShowTurnModal(false)
     }
-  }, [state.current_player, state.actions_remaining, isMyTurn])
+  }, [state.current_player, state.actions_remaining, isMyTurn, myPlayer?.seeker?.power, state.round])
 
   // Gather count
   const gatherCount = (() => {
@@ -160,7 +176,9 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
   const handlePortalClick = (portalIndex, e) => {
     if (!isMyTurn) return
     if (selectedAction === 'harvest') {
-      act('harvest', { portal_index: portalIndex, deep: !!e?.shiftKey })
+      if (!isMobile || e?.shiftKey) {
+        act('harvest', { portal_index: portalIndex, deep: !!e?.shiftKey })
+      }
     } else if (selectedAction === 'stabilize') {
       act('stabilize', { portal_index: portalIndex })
     }
@@ -343,10 +361,24 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                     ))}
                   </div>
                   <div className="portal-stability-label">{portal.stability}/{portal.max_stability}</div>
-                  {selectedAction === 'harvest' && isMyTurn && (
-                    <div className="portal-harvest-info">
-                      <span className={canSafe ? '' : 'blocked'}>Safe: −{safeCost}{!canSafe && ' ❌'}</span>
-                      <span className={canDeep ? '' : 'blocked'}>Deep: −{deepCost}{!canDeep && ' ❌'}</span>
+                  {selectedAction === 'harvest' && isMyTurn && isMobile && (
+                    <div className="portal-harvest-overlay">
+                      <button className="harvest-opt safe" disabled={!canSafe}
+                        onClick={(e) => { e.stopPropagation(); act('harvest', { portal_index: i, deep: false }) }}>
+                        <span className="opt-label">Safe</span>
+                        <span className="opt-cost">−{safeCost} 💎💎</span>
+                      </button>
+                      <button className="harvest-opt deep" disabled={!canDeep}
+                        onClick={(e) => { e.stopPropagation(); act('harvest', { portal_index: i, deep: true }) }}>
+                        <span className="opt-label">Deep</span>
+                        <span className="opt-cost">−{deepCost} 💎💎💎💎</span>
+                      </button>
+                    </div>
+                  )}
+                  {selectedAction === 'harvest' && isMyTurn && !isMobile && (
+                    <div className="portal-harvest-info desktop">
+                      <span className={canSafe ? '' : 'blocked'}>Safe: −{safeCost}</span>
+                      <span className={canDeep ? '' : 'blocked'}>Deep: −{deepCost} (Shift)</span>
                     </div>
                   )}
                 </div>
@@ -478,6 +510,11 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
                 <div className="token-item">🔖 <span className="token-value">{viewedPlayer.tolls_collected}</span> Tolls</div>
                 <div className="token-item">🤝 <span className="token-value">{viewedPlayer.trades_completed}</span> Trades</div>
               </div>
+              {viewedPlayer.backlash_vp_penalty < 0 && (
+                <div className="token-row" style={{ color: 'var(--danger)', fontWeight: 'bold' }}>
+                  <div className="token-item">💀 <span className="token-value">{viewedPlayer.backlash_vp_penalty}</span> Backlash VP</div>
+                </div>
+              )}
               {viewedPlayer.constructs.length > 0 && (
                 <div className="built-section">
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
@@ -580,6 +617,7 @@ export default function Game({ initialState, roomCode, playerId, myIndex, onLeav
               </span>
             </button>
           ))}
+          
           {isActionAvailable('convert') && (
             <button className={`action-btn free-action ${showConvert ? 'active' : ''}`}
               onClick={() => setShowConvert(!showConvert)}>
