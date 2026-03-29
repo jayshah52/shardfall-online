@@ -1657,18 +1657,119 @@ body {
 }
 
 /* ========== RESPONSIVE ========== */
+@media (max-width: 1100px) {
+  .game-layout { grid-template-columns: 1fr 260px; }
+  .rulebook-modal.tabs-layout { width: 95vw; height: 85vh; }
+  .rulebook-sidebar { width: 220px; }
+}
+
 @media (max-width: 768px) {
   .game-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto auto;
+    height: 100vh;
+    overflow: hidden;
   }
+  
+  .game-header {
+    flex-direction: column;
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+  
+  .game-header-left { width: 100%; justify-content: space-between; gap: var(--space-sm); }
+  .game-header-right { width: 100%; justify-content: space-between; gap: var(--space-sm); }
+  
+  .game-board {
+    padding: var(--space-sm);
+    height: auto;
+    overflow-y: auto;
+  }
+  
   .game-sidebar {
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 35vh;
     border-left: none;
     border-top: 1px solid var(--border);
-    max-height: 300px;
+    background: var(--bg-primary);
   }
-  .rift-card { width: 110px; }
-  .construct-card { width: 160px; }
+  
+  .action-bar {
+    grid-row: 4;
+    grid-column: 1;
+    position: relative;
+    bottom: 0;
+    padding: var(--space-sm);
+    overflow-x: auto;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-hover);
+  }
+  
+  .action-btn {
+    flex-shrink: 0;
+    min-width: 110px;
+    padding: 8px 12px;
+  }
+
+  .portal-zone { gap: 8px; }
+  .portal-card { 
+    width: calc(50% - 4px); 
+    padding: var(--space-sm);
+    flex-grow: 1;
+  }
+  
+  .construct-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-sm);
+  }
+  
+  .construct-card { width: 100%; min-width: 150px; }
+  
+  .shard-token { width: 44px; height: 50px; font-size: 1.4rem; }
+  
+  .anomaly-content { padding: 30px; border-radius: 20px; width: 90vw; }
+  .anomaly-name { font-size: 2rem; }
+  .anomaly-desc { font-size: 1rem; }
+  
+  .turn-alert-content { padding: 30px 20px; width: 85vw; }
+  .turn-alert-text { font-size: 1.5rem; letter-spacing: 6px; }
+
+  .modal {
+    width: 95vw !important;
+    padding: var(--space-md) !important;
+    margin: 10px !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .modal h2 { font-size: 1.2rem; }
+
+  .rulebook-modal.tabs-layout {
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  .rulebook-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-tab { padding: 8px 16px; white-space: nowrap; }
+}
+
+@media (max-width: 480px) {
+  .portal-card { width: 100%; }
+  .game-header-left .turn-indicator span:first-child { display: none; }
+  .game-title { font-size: 1rem; }
 }
 
 /* ========== V2: MODE TOGGLE ========== */
@@ -2129,3 +2230,89 @@ body {
   50% { transform: translateY(-10px); }
 }
 
+/* ========== V2: CONTEXTUAL HARVEST MENU ========== */
+.portal-harvest-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  padding: 8px;
+  gap: 6px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.harvest-opt {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: white;
+  padding: 4px;
+}
+
+.harvest-opt .opt-label {
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.harvest-opt .opt-cost {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.9;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.harvest-opt.safe {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.25) 0%, rgba(39, 174, 96, 0.15) 100%);
+  border-color: rgba(46, 204, 113, 0.4);
+}
+.harvest-opt.safe:hover:not(:disabled) {
+  background: rgba(46, 204, 113, 0.4);
+  box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+}
+
+.harvest-opt.deep {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.25) 0%, rgba(192, 57, 43, 0.15) 100%);
+  border-color: rgba(231, 76, 60, 0.4);
+}
+.harvest-opt.deep:hover:not(:disabled) {
+  background: rgba(231, 76, 60, 0.4);
+  box-shadow: 0 0 15px rgba(231, 76, 60, 0.3);
+}
+
+.harvest-opt:active:not(:disabled) { transform: scale(0.95); }
+
+.harvest-opt:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.portal-harvest-info.desktop {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.portal-harvest-info.desktop .blocked {
+  color: var(--danger);
+  opacity: 0.5;
+  text-decoration: line-through;
+}
